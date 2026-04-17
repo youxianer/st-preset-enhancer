@@ -1,27 +1,13 @@
-# 🛠 预设编辑增强 / Preset Editor Enhancer v2.1
+# 🛠 预设编辑增强 / Preset Editor Enhancer v0.1
 
 SillyTavern 第三方扩展 — 优化 Chat Completion 预设编辑体验。
 
 ## 安装
 
-**方法 A（推荐，在线安装）：** Extensions → Install Extension → 粘贴本仓库地址：
+Extensions → Install Extension → 粘贴本仓库地址：
 ```
-https://github.com/<your-username>/st-preset-enhancer
+https://github.com/youxianer/st-preset-enhancer
 ```
-> 把 `<your-username>` 替换成你的 GitHub 用户名。
-
-**方法 B（手动）：** 把 `st-preset-enhancer` 文件夹复制到：
-- `data/<用户>/extensions/st-preset-enhancer/`（当前用户）
-- `public/scripts/extensions/third-party/st-preset-enhancer/`（所有用户）
-
-## 发布到 GitHub（给他人一键安装）
-
-1. 新建公开仓库：`st-preset-enhancer`
-2. 把本扩展文件放在仓库根目录（确保根目录有 `manifest.json`）
-3. 修改 `manifest.json` 的 `homePage` 为你的仓库地址
-4. 推送后，在酒馆里用仓库 URL 测试 `Install Extension`
-
-> 注意：这个扩展必须以“独立仓库”发布，不要把整个 `SillyTavern` 主仓库一起推上去。
 
 ## 功能一览
 

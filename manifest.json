@@ -6,7 +6,7 @@
     "js": "index.js",
     "css": "style.css",
     "author": "Community",
-    "version": "2.1.0",
-    "homePage": "https://github.com/<your-username>/st-preset-enhancer",
+    "version": "0.1",
+    "homePage": "https://github.com/youxianer/st-preset-enhancer",
     "auto_update": true
 }
