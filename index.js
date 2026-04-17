@@ -87,12 +87,27 @@ function commitAC(ta, macro) { const v = ta.value, p = ta.selectionStart; let s 
 function buildDD(matches, ta, coords) {
     removeDD(); if (!matches.length) return; ddList = matches;
     const dd = document.createElement('div'); dd.className = 'pee-ac'; let last = '';
+    const acHeader = document.createElement('div'); acHeader.className = 'pee-ac-current-cat';
     matches.forEach(e => {
         if (e.c !== last) { last = e.c; const c = document.createElement('div'); c.className = 'pee-ac-cat'; c.textContent = e.c; dd.appendChild(c); }
         const it = document.createElement('div'); it.className = 'pee-ac-item';
+        it.dataset.cat = e.c || '';
         it.innerHTML = `<span class="pee-ac-m">${esc(e.m)}</span><span class="pee-ac-d">${esc(e.d)}</span>`;
         it.addEventListener('mousedown', ev => { ev.preventDefault(); commitAC(ta, e.m); }); dd.appendChild(it);
     });
+    acHeader.textContent = matches[0]?.c || '';
+    dd.insertBefore(acHeader, dd.firstChild);
+    const syncCatHeader = () => {
+        const items = dd.querySelectorAll('.pee-ac-item');
+        const top = dd.scrollTop;
+        let current = matches[0]?.c || '';
+        items.forEach(it => {
+            if (it.offsetTop - acHeader.offsetHeight <= top) current = it.dataset.cat || current;
+        });
+        acHeader.textContent = current;
+    };
+    dd.addEventListener('scroll', syncCatHeader);
+    syncCatHeader();
     dd.style.left = Math.min(coords.left, window.innerWidth - 320) + 'px'; dd.style.top = (coords.bottom + 4) + 'px';
     document.body.appendChild(dd); $dd = dd; ddIdx = -1;
 }
