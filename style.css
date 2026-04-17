@@ -32,7 +32,7 @@
 .pee-close{cursor:pointer;font-size:18px;opacity:.6;transition:opacity .15s;background:none;border:none;color:var(--SmartThemeBodyColor,#ccc);padding:2px 6px;flex-shrink:0}
 .pee-close:hover{opacity:1}
 .pee-body{padding:10px 14px;overflow-y:auto;flex:1;-webkit-overflow-scrolling:touch}
-.pee-foot{padding:8px 14px;border-top:1px solid var(--SmartThemeBorderColor,#333);display:flex;gap:6px;flex-wrap:wrap}
+.pee-foot{padding:8px 14px;border-top:1px solid var(--SmartThemeBorderColor,#333);display:flex;gap:6px;flex-wrap:wrap;flex-shrink:0}
 
 /* Var table */
 .pee-vtbl{width:100%;border-collapse:collapse;font-size:12px}
@@ -115,6 +115,15 @@
 
     /* Footer buttons wrap nicely */
     .pee-foot .menu_button_icon{font-size:11px}
+
+    /* Keep footer visible while scrolling on mobile */
+    .pee-sm .pee-foot{
+        position:sticky;
+        bottom:0;
+        z-index:2;
+        background:var(--SmartThemeBlurTintColor,#1a1a2e);
+        box-shadow:0 -4px 12px rgba(0,0,0,.4);
+    }
 }
 
 /* Very small phones */
@@ -143,9 +152,6 @@
 
 /* Search & Replace highlight */
 .pee-sr-match mark{background:rgba(255,200,50,.3);color:inherit;padding:0 1px;border-radius:2px}
-
-/* Force variable manager footer visible on mobile */
-.pee-sm .pee-foot{position:sticky;bottom:0;z-index:999999;background:var(--SmartThemeBlurTintColor,#1a1a2e);flex-shrink:0;box-shadow:0 -4px 12px rgba(0,0,0,.4)}
 
 /* Variable sub-rows grouping */
 .pee-vtbl-var tr+tr>td:only-child{border-left:3px solid var(--SmartThemeBorderColor,#444);padding-left:8px}
