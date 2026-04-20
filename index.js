@@ -278,7 +278,7 @@ function injectSnapshotButton() {
             if (!ta) { toast('请先打开条目编辑框'); return; }
             const sel = ta.value.substring(ta.selectionStart, ta.selectionEnd);
             if (!sel) { toast('请先选中文本'); return; }
-            const res = await snippetEditDialog(sel.substring(0, 30), sel, panel);
+            const res = await snippetEditDialog(sel.substring(0, 30), sel, cl);
             if (!res) return;
             const snippets = getSnippets();
             snippets.push({ name: res.name || sel.substring(0, 20), text: res.text || sel, time: Date.now() });
@@ -1498,9 +1498,9 @@ function openClone() {
 }
 
 // ═══ SNIPPETS (条目片段收藏) ═══
-function snippetEditDialog(initName, initText, parentEl) {
+function snippetEditDialog(initName, initText, closeFn) {
     return new Promise(resolve => {
-        if (parentEl) parentEl.style.display = 'none';
+        if (closeFn) closeFn();
         const ov = document.createElement('div'); ov.className = 'pee-overlay'; ov.style.zIndex = '10001'; document.body.appendChild(ov);
         const box = document.createElement('div'); box.className = 'pee-panel'; box.style.cssText = 'z-index:10002;max-width:520px;width:95%;';
 
@@ -1521,7 +1521,7 @@ function snippetEditDialog(initName, initText, parentEl) {
         cancel.innerHTML = '<i class="fa-solid fa-xmark"></i><span>取消</span>';
         foot.appendChild(ok); foot.appendChild(cancel);
 
-        const done = (val) => { ov.remove(); box.remove(); if (parentEl) parentEl.style.display = ''; resolve(val); };
+        const done = (val) => { ov.remove(); box.remove(); resolve(val); };
         ok.onclick = () => done({ name: box.querySelector('#_sn_name').value, text: box.querySelector('#_sn_text').value });
         cancel.onclick = () => done(null);
         ov.onclick = e => { if (e.target === ov) done(null); };
@@ -1598,7 +1598,7 @@ function openSnippets() {
             const editBtn = document.createElement('button'); editBtn.style.cssText = insertBtn.style.cssText;
             editBtn.textContent = '✏️ 编辑';
             editBtn.addEventListener('click', async () => {
-                const res = await snippetEditDialog(sn.name, sn.text, panel);
+                const res = await snippetEditDialog(sn.name, sn.text, cl);
                 if (!res) return;
                 if (!res.text) { toast('内容不能为空'); return; }
                 sn.name = res.name || '未命名';
@@ -1638,7 +1638,7 @@ function openSnippets() {
     const addBtn = document.createElement('div'); addBtn.className = 'menu_button menu_button_icon';
     addBtn.innerHTML = '<i class="fa-solid fa-plus"></i><span>手动添加</span>';
     addBtn.addEventListener('click', async () => {
-        const res = await snippetEditDialog('', '', panel);
+        const res = await snippetEditDialog('', '', cl);
         if (!res) return;
         if (!res.text) { toast('内容不能为空'); return; }
         snippets.push({ name: res.name || '未命名', text: res.text, time: Date.now() });
@@ -1656,7 +1656,7 @@ function openSnippets() {
         if (!ta) { toast('请先打开条目编辑框'); return; }
         const sel = ta.value.substring(ta.selectionStart, ta.selectionEnd);
         if (!sel) { toast('请先在编辑框中选中文本'); return; }
-        const res = await snippetEditDialog(sel.substring(0, 30), sel, panel);
+        const res = await snippetEditDialog(sel.substring(0, 30), sel, cl);
         if (!res) return;
         snippets.push({ name: res.name || sel.substring(0, 20), text: res.text || sel, time: Date.now() });
         saveS();
