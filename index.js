@@ -269,7 +269,7 @@ function injectSnapshotButton() {
     // 收藏选中文本
     if (S.enableSnippets !== false) {
         const saveSelBtn = document.createElement('a');
-        saveSelBtn.className = 'fa-solid fa-bookmark menu_button interactable pee-snapshot-btn';
+        saveSelBtn.className = 'fa-solid fa-bookmark menu_button interactable pee-snippet-btn';
         saveSelBtn.title = '收藏选中文本'; saveSelBtn.tabIndex = 0; saveSelBtn.role = 'button';
         saveSelBtn.style.cssText = btnStyle;
         saveSelBtn.addEventListener('click', async e => {
@@ -1501,8 +1501,8 @@ function openClone() {
 function snippetEditDialog(initName, initText, closeFn) {
     return new Promise(resolve => {
         if (closeFn) closeFn();
-        const ov = document.createElement('div'); ov.className = 'pee-overlay'; ov.style.zIndex = '10001'; document.body.appendChild(ov);
-        const box = document.createElement('div'); box.className = 'pee-panel'; box.style.cssText = 'z-index:10002;max-width:520px;width:95%;';
+        const ov = document.createElement('div'); ov.className = 'pee-overlay'; document.body.appendChild(ov);
+        const box = document.createElement('div'); box.className = 'pee-panel'; box.style.cssText = 'max-width:520px;width:95%;';
 
         box.innerHTML = `<div class="pee-head"><h3>编辑片段</h3></div>
 <div class="pee-body" style="display:flex;flex-direction:column;gap:8px;">
