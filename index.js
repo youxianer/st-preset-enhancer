@@ -1420,7 +1420,7 @@ function openClone() {
 
     const cloneBtn = document.createElement('div'); cloneBtn.className = 'menu_button menu_button_icon';
     cloneBtn.innerHTML = '<i class="fa-solid fa-clone"></i><span>克隆到目标</span>';
-    cloneBtn.addEventListener('click', () => {
+    cloneBtn.addEventListener('click', async () => {
         const dstName = dstSel.value;
         if (!dstName) { toast('请选择目标预设'); return; }
         const checked = [...listDiv.querySelectorAll('input[type="checkbox"]:checked')].map(cb => parseInt(cb.dataset.idx));
