@@ -1460,6 +1460,25 @@ function openClone() {
                     clone.name = (src.name || src.identifier) + ' (副本)';
                 }
                 dstPreset.prompts.splice(insertIdx + ci, 0, clone);
+
+                // 同步插入 prompt_order
+                if (Array.isArray(dstPreset.prompt_order)) {
+                    dstPreset.prompt_order.forEach(po => {
+                        if (!Array.isArray(po.order)) return;
+                        // 找插入位置：insertIdx 对应的 prompts 条目的 identifier
+                        let orderIdx = po.order.length; // 默认末尾
+                        if (insertIdx + ci > 0) {
+                            const refPrompt = dstPreset.prompts[insertIdx + ci - 1];
+                            if (refPrompt) {
+                                const refPos = po.order.findIndex(o => o.identifier === refPrompt.identifier);
+                                if (refPos >= 0) orderIdx = refPos + 1;
+                            }
+                        } else {
+                            orderIdx = 0;
+                        }
+                        po.order.splice(orderIdx, 0, { identifier: clone.identifier, enabled: true });
+                    });
+                }
                 count++;
             });
 
