@@ -272,16 +272,16 @@ function injectSnapshotButton() {
         saveSelBtn.className = 'fa-solid fa-bookmark menu_button interactable pee-snapshot-btn';
         saveSelBtn.title = '收藏选中文本'; saveSelBtn.tabIndex = 0; saveSelBtn.role = 'button';
         saveSelBtn.style.cssText = btnStyle;
-        saveSelBtn.addEventListener('click', e => {
+        saveSelBtn.addEventListener('click', async e => {
             e.preventDefault(); e.stopPropagation();
             const ta = document.getElementById('completion_prompt_manager_popup_entry_form_prompt');
             if (!ta) { toast('请先打开条目编辑框'); return; }
             const sel = ta.value.substring(ta.selectionStart, ta.selectionEnd);
             if (!sel) { toast('请先选中文本'); return; }
-            const name = prompt('片段名称:', sel.substring(0, 30));
-            if (name === null) return;
+            const res = await snippetEditDialog(sel.substring(0, 30), sel);
+            if (!res) return;
             const snippets = getSnippets();
-            snippets.push({ name: name || sel.substring(0, 20), text: sel, time: Date.now() });
+            snippets.push({ name: res.name || sel.substring(0, 20), text: res.text || sel, time: Date.now() });
             saveS();
             toast('已收藏「' + (name || '片段') + '」');
         });
@@ -1498,6 +1498,35 @@ function openClone() {
 }
 
 // ═══ SNIPPETS (条目片段收藏) ═══
+function snippetEditDialog(initName, initText) {
+    return new Promise(resolve => {
+        const ov = document.createElement('div'); ov.className = 'pee-overlay'; ov.style.zIndex = '10001'; document.body.appendChild(ov);
+        const box = document.createElement('div'); box.className = 'pee-panel'; box.style.cssText = 'z-index:10002;max-width:520px;width:95%;';
+
+        box.innerHTML = `<div class="pee-head"><h3>编辑片段</h3></div>
+<div class="pee-body" style="display:flex;flex-direction:column;gap:8px;">
+  <input id="_sn_name" class="text_pole" placeholder="片段名称" value="${(initName||'').replace(/"/g,'&quot;')}" style="font-size:12px;" />
+  <textarea id="_sn_text" class="text_pole" rows="10" placeholder="片段内容" style="font-size:12px;resize:vertical;font-family:var(--monoFontFamily,monospace);"></textarea>
+</div>
+<div class="pee-foot"></div>`;
+
+        document.body.appendChild(box);
+        box.querySelector('#_sn_text').value = initText || '';
+
+        const foot = box.querySelector('.pee-foot');
+        const ok = document.createElement('div'); ok.className = 'menu_button menu_button_icon';
+        ok.innerHTML = '<i class="fa-solid fa-check"></i><span>确定</span>';
+        const cancel = document.createElement('div'); cancel.className = 'menu_button menu_button_icon';
+        cancel.innerHTML = '<i class="fa-solid fa-xmark"></i><span>取消</span>';
+        foot.appendChild(ok); foot.appendChild(cancel);
+
+        const done = (val) => { ov.remove(); box.remove(); resolve(val); };
+        ok.onclick = () => done({ name: box.querySelector('#_sn_name').value, text: box.querySelector('#_sn_text').value });
+        cancel.onclick = () => done(null);
+        ov.onclick = e => { if (e.target === ov) done(null); };
+    });
+}
+
 function getSnippets() {
     const es = SillyTavern.getContext().extensionSettings;
     if (!es[MODULE_NAME]) es[MODULE_NAME] = {};
@@ -1567,14 +1596,12 @@ function openSnippets() {
             // 编辑按钮
             const editBtn = document.createElement('button'); editBtn.style.cssText = insertBtn.style.cssText;
             editBtn.textContent = '✏️ 编辑';
-            editBtn.addEventListener('click', () => {
-                const newName = prompt('片段名称:', sn.name || '');
-                if (newName === null) return;
-                const newText = prompt('片段内容:', sn.text);
-                if (newText === null) return;
-                if (!newText) { toast('内容不能为空'); return; }
-                sn.name = newName || '未命名';
-                sn.text = newText;
+            editBtn.addEventListener('click', async () => {
+                const res = await snippetEditDialog(sn.name, sn.text);
+                if (!res) return;
+                if (!res.text) { toast('内容不能为空'); return; }
+                sn.name = res.name || '未命名';
+                sn.text = res.text;
                 saveS();
                 render();
             });
@@ -1609,12 +1636,11 @@ function openSnippets() {
     // 手动添加
     const addBtn = document.createElement('div'); addBtn.className = 'menu_button menu_button_icon';
     addBtn.innerHTML = '<i class="fa-solid fa-plus"></i><span>手动添加</span>';
-    addBtn.addEventListener('click', () => {
-        const name = prompt('片段名称:');
-        if (name === null) return;
-        const text = prompt('片段内容:');
-        if (!text) { toast('内容不能为空'); return; }
-        snippets.push({ name: name || '未命名', text, time: Date.now() });
+    addBtn.addEventListener('click', async () => {
+        const res = await snippetEditDialog('', '');
+        if (!res) return;
+        if (!res.text) { toast('内容不能为空'); return; }
+        snippets.push({ name: res.name || '未命名', text: res.text, time: Date.now() });
         saveS();
         render();
         toast('已添加片段');
@@ -1624,14 +1650,14 @@ function openSnippets() {
     // 从当前编辑框选中文本添加
     const fromSelBtn = document.createElement('div'); fromSelBtn.className = 'menu_button menu_button_icon';
     fromSelBtn.innerHTML = '<i class="fa-solid fa-text-slash"></i><span>收藏选中文本</span>';
-    fromSelBtn.addEventListener('click', () => {
+    fromSelBtn.addEventListener('click', async () => {
         const ta = document.getElementById('completion_prompt_manager_popup_entry_form_prompt');
         if (!ta) { toast('请先打开条目编辑框'); return; }
         const sel = ta.value.substring(ta.selectionStart, ta.selectionEnd);
         if (!sel) { toast('请先在编辑框中选中文本'); return; }
-        const name = prompt('片段名称:', sel.substring(0, 30));
-        if (name === null) return;
-        snippets.push({ name: name || sel.substring(0, 20), text: sel, time: Date.now() });
+        const res = await snippetEditDialog(sel.substring(0, 30), sel);
+        if (!res) return;
+        snippets.push({ name: res.name || sel.substring(0, 20), text: res.text || sel, time: Date.now() });
         saveS();
         render();
         toast('已收藏');
