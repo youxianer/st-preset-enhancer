@@ -256,18 +256,19 @@ function scan() {
 
 function injectSnapshotButton() {
     const h3 = document.querySelector('h3[data-i18n="prompt_manager_edit"]');
-    if (!h3 || h3.querySelector('.pee-snapshot-btn')) return;
+    if (!h3) return;
     const btnStyle = 'margin-left:6px;font-size:13px;cursor:pointer;display:inline;vertical-align:middle;padding:2px 4px;';
 
-    const snapBtn = document.createElement('a');
-    snapBtn.className = 'fa-solid fa-camera menu_button interactable pee-snapshot-btn';
-    snapBtn.title = '预设快照'; snapBtn.tabIndex = 0; snapBtn.role = 'button';
-    snapBtn.style.cssText = btnStyle;
-    snapBtn.addEventListener('click', e => { e.preventDefault(); e.stopPropagation(); openSnapshot(); });
-    h3.appendChild(snapBtn);
+    if (!h3.querySelector('.pee-snapshot-btn')) {
+        const snapBtn = document.createElement('a');
+        snapBtn.className = 'fa-solid fa-camera menu_button interactable pee-snapshot-btn';
+        snapBtn.title = '预设快照'; snapBtn.tabIndex = 0; snapBtn.role = 'button';
+        snapBtn.style.cssText = btnStyle;
+        snapBtn.addEventListener('click', e => { e.preventDefault(); e.stopPropagation(); openSnapshot(); });
+        h3.appendChild(snapBtn);
+    }
 
-    // 收藏选中文本
-    if (S.enableSnippets !== false) {
+    if (S.enableSnippets !== false && !h3.querySelector('.pee-snippet-btn')) {
         const saveSelBtn = document.createElement('a');
         saveSelBtn.className = 'fa-solid fa-bookmark menu_button interactable pee-snippet-btn';
         saveSelBtn.title = '收藏选中文本'; saveSelBtn.tabIndex = 0; saveSelBtn.role = 'button';
@@ -278,7 +279,7 @@ function injectSnapshotButton() {
             if (!ta) { toast('请先打开条目编辑框'); return; }
             const sel = ta.value.substring(ta.selectionStart, ta.selectionEnd);
             if (!sel) { toast('请先选中文本'); return; }
-            const res = await snippetEditDialog(sel.substring(0, 30), sel, cl);
+            const res = await snippetEditDialog(sel.substring(0, 30), sel, null);
             if (!res) return;
             const snippets = getSnippets();
             snippets.push({ name: res.name || sel.substring(0, 20), text: res.text || sel, time: Date.now() });
