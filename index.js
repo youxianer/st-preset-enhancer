@@ -1463,7 +1463,7 @@ function openClone() {
                 count++;
             });
 
-            getPM().savePreset(dstName);
+            await getPM().savePreset(dstName, dstPreset);
             toast(`已克隆 ${count} 个条目到「${dstName}」`);
         } catch (e) {
             LOG('Clone error:', e);
