@@ -1483,10 +1483,10 @@ function openClone() {
             });
 
             await getPM().savePreset(dstName, dstPreset);
-            toast(`已克隆 ${count} 个条目到「${dstName}」`);
+            window.toastr.success(`已克隆 ${count} 个条目到「${dstName}」`);
         } catch (e) {
             LOG('Clone error:', e);
-            toast('克隆失败: ' + e.message);
+            window.toastr.error('克隆失败: ' + e.message);
         }
     });
     foot.appendChild(cloneBtn);
