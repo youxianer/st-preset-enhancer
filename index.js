@@ -1564,6 +1564,22 @@ function openSnippets() {
             copyBtn.addEventListener('click', () => { navigator.clipboard.writeText(sn.text).then(() => toast('已复制')); });
             cardHead.appendChild(copyBtn);
 
+            // 编辑按钮
+            const editBtn = document.createElement('button'); editBtn.style.cssText = insertBtn.style.cssText;
+            editBtn.textContent = '✏️ 编辑';
+            editBtn.addEventListener('click', () => {
+                const newName = prompt('片段名称:', sn.name || '');
+                if (newName === null) return;
+                const newText = prompt('片段内容:', sn.text);
+                if (newText === null) return;
+                if (!newText) { toast('内容不能为空'); return; }
+                sn.name = newName || '未命名';
+                sn.text = newText;
+                saveS();
+                render();
+            });
+            cardHead.appendChild(editBtn);
+
             // 删除按钮
             const delBtn = document.createElement('button'); delBtn.style.cssText = insertBtn.style.cssText + 'color:#f88;';
             delBtn.textContent = '✕';
