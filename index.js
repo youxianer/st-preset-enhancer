@@ -278,7 +278,7 @@ function injectSnapshotButton() {
             if (!ta) { toast('请先打开条目编辑框'); return; }
             const sel = ta.value.substring(ta.selectionStart, ta.selectionEnd);
             if (!sel) { toast('请先选中文本'); return; }
-            const res = await snippetEditDialog(sel.substring(0, 30), sel);
+            const res = await snippetEditDialog(sel.substring(0, 30), sel, panel);
             if (!res) return;
             const snippets = getSnippets();
             snippets.push({ name: res.name || sel.substring(0, 20), text: res.text || sel, time: Date.now() });
@@ -1498,8 +1498,9 @@ function openClone() {
 }
 
 // ═══ SNIPPETS (条目片段收藏) ═══
-function snippetEditDialog(initName, initText) {
+function snippetEditDialog(initName, initText, parentEl) {
     return new Promise(resolve => {
+        if (parentEl) parentEl.style.display = 'none';
         const ov = document.createElement('div'); ov.className = 'pee-overlay'; ov.style.zIndex = '10001'; document.body.appendChild(ov);
         const box = document.createElement('div'); box.className = 'pee-panel'; box.style.cssText = 'z-index:10002;max-width:520px;width:95%;';
 
@@ -1520,7 +1521,7 @@ function snippetEditDialog(initName, initText) {
         cancel.innerHTML = '<i class="fa-solid fa-xmark"></i><span>取消</span>';
         foot.appendChild(ok); foot.appendChild(cancel);
 
-        const done = (val) => { ov.remove(); box.remove(); resolve(val); };
+        const done = (val) => { ov.remove(); box.remove(); if (parentEl) parentEl.style.display = ''; resolve(val); };
         ok.onclick = () => done({ name: box.querySelector('#_sn_name').value, text: box.querySelector('#_sn_text').value });
         cancel.onclick = () => done(null);
         ov.onclick = e => { if (e.target === ov) done(null); };
@@ -1597,7 +1598,7 @@ function openSnippets() {
             const editBtn = document.createElement('button'); editBtn.style.cssText = insertBtn.style.cssText;
             editBtn.textContent = '✏️ 编辑';
             editBtn.addEventListener('click', async () => {
-                const res = await snippetEditDialog(sn.name, sn.text);
+                const res = await snippetEditDialog(sn.name, sn.text, panel);
                 if (!res) return;
                 if (!res.text) { toast('内容不能为空'); return; }
                 sn.name = res.name || '未命名';
@@ -1637,7 +1638,7 @@ function openSnippets() {
     const addBtn = document.createElement('div'); addBtn.className = 'menu_button menu_button_icon';
     addBtn.innerHTML = '<i class="fa-solid fa-plus"></i><span>手动添加</span>';
     addBtn.addEventListener('click', async () => {
-        const res = await snippetEditDialog('', '');
+        const res = await snippetEditDialog('', '', panel);
         if (!res) return;
         if (!res.text) { toast('内容不能为空'); return; }
         snippets.push({ name: res.name || '未命名', text: res.text, time: Date.now() });
@@ -1655,7 +1656,7 @@ function openSnippets() {
         if (!ta) { toast('请先打开条目编辑框'); return; }
         const sel = ta.value.substring(ta.selectionStart, ta.selectionEnd);
         if (!sel) { toast('请先在编辑框中选中文本'); return; }
-        const res = await snippetEditDialog(sel.substring(0, 30), sel);
+        const res = await snippetEditDialog(sel.substring(0, 30), sel, panel);
         if (!res) return;
         snippets.push({ name: res.name || sel.substring(0, 20), text: res.text || sel, time: Date.now() });
         saveS();
@@ -1823,7 +1824,7 @@ jQuery(async () => {
     jQuery('#pee_opt_autocomplete').prop('checked', S.enableAutocomplete).on('change', function () { S.enableAutocomplete = this.checked; saveS(); if (!this.checked) removeDD(); });
     jQuery('#pee_opt_toolbar').prop('checked', S.enableToolbar).on('change', function () { S.enableToolbar = this.checked; saveS(); document.querySelectorAll('.pee-toolbar').forEach(e => e.remove()); if (this.checked) scan(); });
     jQuery('#pee_opt_charcount').prop('checked', S.enableCharCount).on('change', function () { S.enableCharCount = this.checked; saveS(); document.querySelectorAll('.pee-counter').forEach(e => e.remove()); if (this.checked) scan(); });
-    jQuery('#pee_opt_snippets').prop('checked', S.enableSnippets !== false).on('change', function () { S.enableSnippets = this.checked; saveS(); });
+    jQuery('#pee_opt_snippets').prop('checked', S.enableSnippets !== false).on('change', function () { S.enableSnippets = this.checked; saveS(); document.querySelectorAll('.pee-snippet-btn').forEach(e => e.remove()); if (this.checked) scan(); });
     jQuery('#pee_btn_varmanager').on('click', openVarManager);
     jQuery('#pee_btn_vardeps').on('click', openVarDeps);
     jQuery('#pee_btn_compare').on('click', openCompare);
