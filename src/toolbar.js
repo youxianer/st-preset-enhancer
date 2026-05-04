@@ -18,24 +18,31 @@ function buildToolbar(ta) {
     const bar = document.createElement('div'); bar.className = 'pee-toolbar';
     const lbl = document.createElement('span'); lbl.className = 'pee-toolbar-lbl'; lbl.textContent = 'MACROS'; bar.appendChild(lbl);
     const snap = { valid: false, value: '', ss: 0, se: 0 };
-    let debounceTimer = null;
-    const commitSnap = () => {
-        if (debounceTimer !== null) { window.clearTimeout(debounceTimer); debounceTimer = null; }
+    let resetTimer = null;
+    let captured = false;
+    ta.addEventListener('beforeinput', () => {
+        if (captured) return;
+        captured = true;
         snap.value = ta.value; snap.ss = ta.selectionStart; snap.se = ta.selectionEnd; snap.valid = true;
         undoBtn.disabled = false;
-    };
-    ta.addEventListener('input', () => {
-        if (debounceTimer !== null) window.clearTimeout(debounceTimer);
-        debounceTimer = window.setTimeout(() => { debounceTimer = null; commitSnap(); }, 1000);
-        undoBtn.disabled = false;
     });
+    ta.addEventListener('input', () => {
+        if (resetTimer !== null) window.clearTimeout(resetTimer);
+        resetTimer = window.setTimeout(() => { resetTimer = null; captured = false; }, 1000);
+    });
+    const commitSnap = () => {
+        snap.value = ta.value; snap.ss = ta.selectionStart; snap.se = ta.selectionEnd; snap.valid = true;
+        captured = true;
+        if (resetTimer !== null) { window.clearTimeout(resetTimer); resetTimer = null; }
+        undoBtn.disabled = false;
+    };
     const undoBtn = document.createElement('button'); undoBtn.type = 'button'; undoBtn.className = 'pee-toolbar-btn pee-toolbar-undo'; undoBtn.textContent = '↩'; undoBtn.title = '撤回'; undoBtn.disabled = true;
     undoBtn.addEventListener('click', () => {
         if (!snap.valid) return;
-        if (debounceTimer !== null) { window.clearTimeout(debounceTimer); debounceTimer = null; }
+        if (resetTimer !== null) { window.clearTimeout(resetTimer); resetTimer = null; }
         ta.value = snap.value; ta.selectionStart = snap.ss; ta.selectionEnd = snap.se;
         ta.dispatchEvent(new Event('input', { bubbles: true })); ta.focus();
-        snap.valid = false; undoBtn.disabled = true;
+        snap.valid = false; captured = false; undoBtn.disabled = true;
     });
     bar.appendChild(undoBtn);
     QUICK_MACROS.forEach(m => {
