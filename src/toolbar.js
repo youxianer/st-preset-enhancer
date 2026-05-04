@@ -1,7 +1,7 @@
 import { S, QUICK_MACROS, saveS, toast } from "./core.js";
 
-function insertAt(ta, t, cursorOff, snapshot) {
-    if (snapshot) { snapshot.value = ta.value; snapshot.ss = ta.selectionStart; snapshot.se = ta.selectionEnd; snapshot.valid = true; }
+function insertAt(ta, t, cursorOff, commit) {
+    if (commit) commit();
     const p = ta.selectionStart, e = ta.selectionEnd, v = ta.value;
     ta.value = v.substring(0, p) + t + v.substring(e);
     const pos = typeof cursorOff === 'number' ? p + t.length + cursorOff : p + t.length;
@@ -18,9 +18,21 @@ function buildToolbar(ta) {
     const bar = document.createElement('div'); bar.className = 'pee-toolbar';
     const lbl = document.createElement('span'); lbl.className = 'pee-toolbar-lbl'; lbl.textContent = 'MACROS'; bar.appendChild(lbl);
     const snap = { valid: false, value: '', ss: 0, se: 0 };
-    const undoBtn = document.createElement('button'); undoBtn.type = 'button'; undoBtn.className = 'pee-toolbar-btn pee-toolbar-undo'; undoBtn.textContent = '↩'; undoBtn.title = '撤回上次插入'; undoBtn.disabled = true;
+    let debounceTimer = null;
+    const commitSnap = () => {
+        if (debounceTimer !== null) { window.clearTimeout(debounceTimer); debounceTimer = null; }
+        snap.value = ta.value; snap.ss = ta.selectionStart; snap.se = ta.selectionEnd; snap.valid = true;
+        undoBtn.disabled = false;
+    };
+    ta.addEventListener('input', () => {
+        if (debounceTimer !== null) window.clearTimeout(debounceTimer);
+        debounceTimer = window.setTimeout(() => { debounceTimer = null; commitSnap(); }, 1000);
+        undoBtn.disabled = false;
+    });
+    const undoBtn = document.createElement('button'); undoBtn.type = 'button'; undoBtn.className = 'pee-toolbar-btn pee-toolbar-undo'; undoBtn.textContent = '↩'; undoBtn.title = '撤回'; undoBtn.disabled = true;
     undoBtn.addEventListener('click', () => {
         if (!snap.valid) return;
+        if (debounceTimer !== null) { window.clearTimeout(debounceTimer); debounceTimer = null; }
         ta.value = snap.value; ta.selectionStart = snap.ss; ta.selectionEnd = snap.se;
         ta.dispatchEvent(new Event('input', { bubbles: true })); ta.focus();
         snap.valid = false; undoBtn.disabled = true;
@@ -88,10 +100,9 @@ function buildToolbar(ta) {
                     updateCustomTitle();
                     toast(`已保存自定义${customIdx + 1}`);
                 }
-                insertAt(ta, text, undefined, snap); undoBtn.disabled = false;
-                return;
+                insertAt(ta, text, undefined, commitSnap); return;
             }
-            insertAt(ta, m.insert, m.cursor, snap); undoBtn.disabled = false;
+            insertAt(ta, m.insert, m.cursor, commitSnap);
         });
         bar.appendChild(btn);
     });
