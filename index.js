@@ -446,7 +446,7 @@ function openVarDeps() {
         });
     });
 
-    const overlay = document.createElement('div'); overlay.className = 'pee-overlay'; overlay.addEventListener('mousedown', e => e.stopPropagation()); document.body.appendChild(overlay);
+    const overlay = document.createElement('div'); overlay.className = 'pee-overlay'; overlay.addEventListener('mousedown', e => e.stopPropagation()); overlay.addEventListener('click', e => e.stopPropagation()); document.body.appendChild(overlay);
     const panel = document.createElement('div'); panel.className = 'pee-panel pee-lg';
     const cl = () => { overlay.remove(); panel.remove(); };
     overlay.onclick = e => { if (e.target === overlay) cl(); };
@@ -454,7 +454,7 @@ function openVarDeps() {
     const head = document.createElement('div'); head.className = 'pee-head';
     head.innerHTML = `<h3><i class="fa-solid fa-diagram-project"></i> 变量依赖 — ${esc(presetName)} (${varMap.size} 变量)</h3>`;
     const closeX = document.createElement('button'); closeX.className = 'pee-close'; closeX.innerHTML = '<i class="fa-solid fa-xmark"></i>';
-    closeX.onclick = cl; head.appendChild(closeX); panel.appendChild(head);
+    closeX.addEventListener('click', e => { e.stopPropagation(); cl(); });
 
     const body = document.createElement('div'); body.className = 'pee-body';
 
@@ -547,7 +547,7 @@ function openVarDeps() {
     const foot = document.createElement('div'); foot.className = 'pee-foot';
     const closeBtn = document.createElement('div'); closeBtn.className = 'menu_button menu_button_icon';
     closeBtn.innerHTML = '<i class="fa-solid fa-xmark"></i><span>关闭</span>';
-    closeBtn.onclick = cl; foot.appendChild(closeBtn);
+    closeBtn.addEventListener('click', e => { e.stopPropagation(); cl(); }); foot.appendChild(closeBtn);
     panel.appendChild(foot); document.body.appendChild(panel);
 }
 
@@ -557,7 +557,7 @@ function openVarManager() {
     prompts.forEach(p => { if (p && p.content) allText += '\n' + p.content; });
     const vars = extractVars(allText);
 
-    const overlay = document.createElement('div'); overlay.className = 'pee-overlay'; overlay.addEventListener('mousedown', e => e.stopPropagation()); document.body.appendChild(overlay);
+    const overlay = document.createElement('div'); overlay.className = 'pee-overlay'; overlay.addEventListener('mousedown', e => e.stopPropagation()); overlay.addEventListener('click', e => e.stopPropagation()); document.body.appendChild(overlay);
     const panel = document.createElement('div'); panel.className = 'pee-panel pee-sm';
     const cl = () => { overlay.remove(); panel.remove(); };
 
@@ -574,7 +574,7 @@ function openVarManager() {
     depBtn.addEventListener('click', () => { openVarDeps(); });
     headR.appendChild(depBtn);
     const closeX = document.createElement('button'); closeX.className = 'pee-close'; closeX.innerHTML = '<i class="fa-solid fa-xmark"></i>';
-    closeX.onclick = cl; overlay.onclick = cl; headR.appendChild(closeX);
+    closeX.addEventListener('click', e => { e.stopPropagation(); cl(); }); overlay.onclick = cl; headR.appendChild(closeX);
     head.appendChild(headR); panel.appendChild(head);
 
     const body = document.createElement('div'); body.className = 'pee-body';
@@ -677,7 +677,7 @@ function openSearchReplace() {
     const presetName = getCurrentPresetName();
     const prompts = getRealPrompts(getCurrentPrompts());
 
-    const overlay = document.createElement('div'); overlay.className = 'pee-overlay'; overlay.addEventListener('mousedown', e => e.stopPropagation()); document.body.appendChild(overlay);
+    const overlay = document.createElement('div'); overlay.className = 'pee-overlay'; overlay.addEventListener('mousedown', e => e.stopPropagation()); overlay.addEventListener('click', e => e.stopPropagation()); document.body.appendChild(overlay);
     const panel = document.createElement('div'); panel.className = 'pee-panel pee-lg';
     const cl = () => { overlay.remove(); panel.remove(); };
     overlay.onclick = e => { if (e.target === overlay) cl(); };
@@ -685,7 +685,7 @@ function openSearchReplace() {
     const head = document.createElement('div'); head.className = 'pee-head';
     head.innerHTML = `<h3><i class="fa-solid fa-magnifying-glass-arrow-right"></i> 全预设搜索替换 — ${esc(presetName)} (${prompts.length} 条)</h3>`;
     const closeX = document.createElement('button'); closeX.className = 'pee-close'; closeX.innerHTML = '<i class="fa-solid fa-xmark"></i>';
-    closeX.onclick = cl; head.appendChild(closeX); panel.appendChild(head);
+    closeX.addEventListener('click', e => { e.stopPropagation(); cl(); });
 
     const body = document.createElement('div'); body.className = 'pee-body';
 
@@ -867,7 +867,7 @@ function openSearchReplace() {
 
     const closeBtn = document.createElement('div'); closeBtn.className = 'menu_button menu_button_icon';
     closeBtn.innerHTML = '<i class="fa-solid fa-xmark"></i><span>关闭</span>';
-    closeBtn.onclick = cl;
+    closeBtn.addEventListener('click', e => { e.stopPropagation(); cl(); });
     foot.appendChild(closeBtn);
 
     panel.appendChild(foot); document.body.appendChild(panel);
@@ -880,7 +880,7 @@ function openPromptStatus() {
     const allPrompts = getCurrentPrompts();
     const prompts = allPrompts.filter(p => p.identifier); // 包含 marker 的也展示
 
-    const overlay = document.createElement('div'); overlay.className = 'pee-overlay'; overlay.addEventListener('mousedown', e => e.stopPropagation()); document.body.appendChild(overlay);
+    const overlay = document.createElement('div'); overlay.className = 'pee-overlay'; overlay.addEventListener('mousedown', e => e.stopPropagation()); overlay.addEventListener('click', e => e.stopPropagation()); document.body.appendChild(overlay);
     const panel = document.createElement('div'); panel.className = 'pee-panel pee-lg';
     const cl = () => { overlay.remove(); panel.remove(); };
     overlay.onclick = e => { if (e.target === overlay) cl(); };
@@ -889,7 +889,7 @@ function openPromptStatus() {
     head.innerHTML = `<h3><i class="fa-solid fa-toggle-on"></i> 条目状态 — ${esc(presetName)}</h3>`;
     const headR = document.createElement('div'); headR.style.cssText = 'display:flex;gap:4px;align-items:center;';
     const closeX = document.createElement('button'); closeX.className = 'pee-close'; closeX.innerHTML = '<i class="fa-solid fa-xmark"></i>';
-    closeX.onclick = cl; headR.appendChild(closeX); head.appendChild(headR); panel.appendChild(head);
+    closeX.addEventListener('click', e => { e.stopPropagation(); cl(); }); headR.appendChild(closeX); head.appendChild(headR); panel.appendChild(head);
 
     const body = document.createElement('div'); body.className = 'pee-body';
     const tbl = document.createElement('table'); tbl.className = 'pee-vtbl pee-status-tbl';
@@ -1011,7 +1011,7 @@ function openPromptOrder() {
     // 深度注入按 depth 排序
     depthItems.sort((a, b) => (a.injection_depth || 0) - (b.injection_depth || 0));
 
-    const overlay = document.createElement('div'); overlay.className = 'pee-overlay'; overlay.addEventListener('mousedown', e => e.stopPropagation()); document.body.appendChild(overlay);
+    const overlay = document.createElement('div'); overlay.className = 'pee-overlay'; overlay.addEventListener('mousedown', e => e.stopPropagation()); overlay.addEventListener('click', e => e.stopPropagation()); document.body.appendChild(overlay);
     const panel = document.createElement('div'); panel.className = 'pee-panel pee-lg';
     const cl = () => { overlay.remove(); panel.remove(); };
     overlay.onclick = e => { if (e.target === overlay) cl(); };
@@ -1019,7 +1019,7 @@ function openPromptOrder() {
     const head = document.createElement('div'); head.className = 'pee-head';
     head.innerHTML = `<h3><i class="fa-solid fa-arrow-down-1-9"></i> 发送顺序预览 — ${esc(presetName)}</h3>`;
     const closeX = document.createElement('button'); closeX.className = 'pee-close'; closeX.innerHTML = '<i class="fa-solid fa-xmark"></i>';
-    closeX.onclick = cl; head.appendChild(closeX); panel.appendChild(head);
+    closeX.addEventListener('click', e => { e.stopPropagation(); cl(); });
 
     const body = document.createElement('div'); body.className = 'pee-body';
 
@@ -1081,7 +1081,7 @@ function openPromptOrder() {
     const foot = document.createElement('div'); foot.className = 'pee-foot';
     const closeBtn = document.createElement('div'); closeBtn.className = 'menu_button menu_button_icon';
     closeBtn.innerHTML = '<i class="fa-solid fa-xmark"></i><span>关闭</span>';
-    closeBtn.onclick = cl; foot.appendChild(closeBtn);
+    closeBtn.addEventListener('click', e => { e.stopPropagation(); cl(); }); foot.appendChild(closeBtn);
     panel.appendChild(foot); document.body.appendChild(panel);
 }
 
@@ -1099,13 +1099,13 @@ async function openCompare() {
     const presetNames = getAllPresetNames();
     const currentName = getCurrentPresetName();
 
-    const overlay = document.createElement('div'); overlay.className = 'pee-overlay'; overlay.addEventListener('mousedown', e => e.stopPropagation()); document.body.appendChild(overlay);
+    const overlay = document.createElement('div'); overlay.className = 'pee-overlay'; overlay.addEventListener('mousedown', e => e.stopPropagation()); overlay.addEventListener('click', e => e.stopPropagation()); document.body.appendChild(overlay);
     const panel = document.createElement('div'); panel.className = 'pee-panel pee-lg';
     const cl = () => { overlay.remove(); panel.remove(); };
     const head = document.createElement('div'); head.className = 'pee-head';
     head.innerHTML = '<h3><i class="fa-solid fa-code-compare"></i> 预设对比</h3>';
     const closeX = document.createElement('button'); closeX.className = 'pee-close'; closeX.innerHTML = '<i class="fa-solid fa-xmark"></i>';
-    closeX.onclick = cl; overlay.onclick = e => { if (e.target === overlay) cl(); };
+    closeX.addEventListener('click', e => { e.stopPropagation(); cl(); }); overlay.onclick = e => { if (e.target === overlay) cl(); };
     head.appendChild(closeX); panel.appendChild(head);
 
     const body = document.createElement('div'); body.className = 'pee-body';
@@ -1357,7 +1357,7 @@ function openClone() {
     const presetNames = getAllPresetNames();
     const currentName = getCurrentPresetName();
 
-    const overlay = document.createElement('div'); overlay.className = 'pee-overlay'; overlay.addEventListener('mousedown', e => e.stopPropagation()); document.body.appendChild(overlay);
+    const overlay = document.createElement('div'); overlay.className = 'pee-overlay'; overlay.addEventListener('mousedown', e => e.stopPropagation()); overlay.addEventListener('click', e => e.stopPropagation()); document.body.appendChild(overlay);
     const panel = document.createElement('div'); panel.className = 'pee-panel pee-lg';
     const cl = () => { overlay.remove(); panel.remove(); };
     overlay.onclick = e => { if (e.target === overlay) cl(); };
@@ -1365,7 +1365,7 @@ function openClone() {
     const head = document.createElement('div'); head.className = 'pee-head';
     head.innerHTML = '<h3><i class="fa-solid fa-clone"></i> 条目克隆</h3>';
     const closeX = document.createElement('button'); closeX.className = 'pee-close'; closeX.innerHTML = '<i class="fa-solid fa-xmark"></i>';
-    closeX.onclick = cl; head.appendChild(closeX); panel.appendChild(head);
+    closeX.addEventListener('click', e => { e.stopPropagation(); cl(); });
 
     const body = document.createElement('div'); body.className = 'pee-body';
 
@@ -1528,7 +1528,7 @@ function openClone() {
 
     const closeBtn = document.createElement('div'); closeBtn.className = 'menu_button menu_button_icon';
     closeBtn.innerHTML = '<i class="fa-solid fa-xmark"></i><span>关闭</span>';
-    closeBtn.onclick = cl; foot.appendChild(closeBtn);
+    closeBtn.addEventListener('click', e => { e.stopPropagation(); cl(); }); foot.appendChild(closeBtn);
     panel.appendChild(foot); document.body.appendChild(panel);
 }
 
@@ -1573,7 +1573,7 @@ function getSnippets() {
 function openSnippets() {
     const snippets = getSnippets();
 
-    const overlay = document.createElement('div'); overlay.className = 'pee-overlay'; overlay.addEventListener('mousedown', e => e.stopPropagation()); document.body.appendChild(overlay);
+    const overlay = document.createElement('div'); overlay.className = 'pee-overlay'; overlay.addEventListener('mousedown', e => e.stopPropagation()); overlay.addEventListener('click', e => e.stopPropagation()); document.body.appendChild(overlay);
     const panel = document.createElement('div'); panel.className = 'pee-panel pee-lg';
     const cl = () => { overlay.remove(); panel.remove(); };
     overlay.onclick = e => { if (e.target === overlay) cl(); };
@@ -1581,7 +1581,7 @@ function openSnippets() {
     const head = document.createElement('div'); head.className = 'pee-head';
     head.innerHTML = `<h3><i class="fa-solid fa-bookmark"></i> 片段收藏 (${snippets.length})</h3>`;
     const closeX = document.createElement('button'); closeX.className = 'pee-close'; closeX.innerHTML = '<i class="fa-solid fa-xmark"></i>';
-    closeX.onclick = cl; head.appendChild(closeX); panel.appendChild(head);
+    closeX.addEventListener('click', e => { e.stopPropagation(); cl(); });
 
     const body = document.createElement('div'); body.className = 'pee-body';
 
@@ -1739,7 +1739,7 @@ function openSnippets() {
 
     const closeBtn = document.createElement('div'); closeBtn.className = 'menu_button menu_button_icon';
     closeBtn.innerHTML = '<i class="fa-solid fa-xmark"></i><span>关闭</span>';
-    closeBtn.onclick = cl; foot.appendChild(closeBtn);
+    closeBtn.addEventListener('click', e => { e.stopPropagation(); cl(); }); foot.appendChild(closeBtn);
     panel.appendChild(foot); document.body.appendChild(panel);
 }
 
@@ -1755,7 +1755,7 @@ function openSnapshot() {
     const presetName = getCurrentPresetName();
     const snapshots = getSnapshots();
 
-    const overlay = document.createElement('div'); overlay.className = 'pee-overlay'; overlay.addEventListener('mousedown', e => e.stopPropagation()); document.body.appendChild(overlay);
+    const overlay = document.createElement('div'); overlay.className = 'pee-overlay'; overlay.addEventListener('mousedown', e => e.stopPropagation()); overlay.addEventListener('click', e => e.stopPropagation()); document.body.appendChild(overlay);
     const panel = document.createElement('div'); panel.className = 'pee-panel pee-lg';
     const cl = () => { overlay.remove(); panel.remove(); };
     overlay.onclick = e => { if (e.target === overlay) cl(); };
@@ -1763,7 +1763,7 @@ function openSnapshot() {
     const head = document.createElement('div'); head.className = 'pee-head';
     head.innerHTML = `<h3><i class="fa-solid fa-camera"></i> 预设快照 — ${esc(presetName)}</h3>`;
     const closeX = document.createElement('button'); closeX.className = 'pee-close'; closeX.innerHTML = '<i class="fa-solid fa-xmark"></i>';
-    closeX.onclick = cl; head.appendChild(closeX); panel.appendChild(head);
+    closeX.addEventListener('click', e => { e.stopPropagation(); cl(); });
 
     const body = document.createElement('div'); body.className = 'pee-body';
 
@@ -1847,7 +1847,7 @@ function openSnapshot() {
 
     const closeBtn = document.createElement('div'); closeBtn.className = 'menu_button menu_button_icon';
     closeBtn.innerHTML = '<i class="fa-solid fa-xmark"></i><span>关闭</span>';
-    closeBtn.onclick = cl; foot.appendChild(closeBtn);
+    closeBtn.addEventListener('click', e => { e.stopPropagation(); cl(); }); foot.appendChild(closeBtn);
     panel.appendChild(foot); document.body.appendChild(panel);
 }
 
