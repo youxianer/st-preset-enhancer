@@ -1,0 +1,68 @@
+<div id="pee_settings">
+    <div class="inline-drawer">
+        <div class="inline-drawer-toggle inline-drawer-header">
+            <b>🛠 预设编辑增强 / Preset Enhancer</b>
+            <div class="inline-drawer-icon fa-solid fa-circle-chevron-down"></div>
+        </div>
+        <div class="inline-drawer-content" style="font-size:.9em;display:none;">
+            <label class="checkbox_label" for="pee_opt_autocomplete" title="输入 {{ 时自动弹出变量联想">
+                <input type="checkbox" id="pee_opt_autocomplete" />
+                <span>自动联想变量 / Auto-suggest macros</span>
+            </label>
+            <label class="checkbox_label" for="pee_opt_toolbar" title="在 prompt 编辑框上方显示宏快捷按钮">
+                <input type="checkbox" id="pee_opt_toolbar" />
+                <span>宏快捷栏 / Macro toolbar</span>
+            </label>
+            <label class="checkbox_label" for="pee_opt_charcount" title="在 prompt 编辑框下方显示字符计数">
+                <input type="checkbox" id="pee_opt_charcount" />
+                <span>字符计数 / Character counter</span>
+            </label>
+            <label class="checkbox_label" for="pee_opt_snippets" title="启用片段收藏功能（在编辑框工具栏显示收藏按钮）">
+                <input type="checkbox" id="pee_opt_snippets" />
+                <span>片段收藏 / Snippets</span>
+            </label>
+            <hr />
+            <div style="display:flex;gap:6px;flex-wrap:wrap;">
+                <div id="pee_btn_searchreplace" class="menu_button menu_button_icon" title="跨条目搜索替换文本">
+                    <i class="fa-solid fa-magnifying-glass-arrow-right"></i>
+                    <span>搜索替换</span>
+                </div>
+                <div id="pee_btn_status" class="menu_button menu_button_icon" title="查看/切换所有条目启用状态">
+                    <i class="fa-solid fa-toggle-on"></i>
+                    <span>条目状态</span>
+                </div>
+                <div id="pee_btn_order" class="menu_button menu_button_icon" title="预览条目发送顺序">
+                    <i class="fa-solid fa-arrow-down-1-9"></i>
+                    <span>顺序预览</span>
+                </div>
+                <div id="pee_btn_clone" class="menu_button menu_button_icon" title="跨预设克隆条目">
+                    <i class="fa-solid fa-clone"></i>
+                    <span>条目克隆</span>
+                </div>
+                <div id="pee_btn_snapshot" class="menu_button menu_button_icon" title="保存/恢复预设快照">
+                    <i class="fa-solid fa-camera"></i>
+                    <span>预设快照</span>
+                </div>
+            </div>
+            <hr />
+            <div style="display:flex;gap:6px;flex-wrap:wrap;">
+                <div id="pee_btn_varmanager" class="menu_button menu_button_icon" title="扫描预设中的变量">
+                    <i class="fa-solid fa-list-check"></i>
+                    <span>变量管理器</span>
+                </div>
+                <div id="pee_btn_vardeps" class="menu_button menu_button_icon" title="变量读写依赖分析">
+                    <i class="fa-solid fa-diagram-project"></i>
+                    <span>变量依赖</span>
+                </div>
+                <div id="pee_btn_compare" class="menu_button menu_button_icon" title="对比预设条目">
+                    <i class="fa-solid fa-code-compare"></i>
+                    <span>预设对比</span>
+                </div>
+                <div id="pee_btn_snippets" class="menu_button menu_button_icon" title="管理收藏的文本片段">
+                    <i class="fa-solid fa-bookmark"></i>
+                    <span>片段收藏</span>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

@@ -1,0 +1,12 @@
+{
+    "display_name": "预设编辑增强 / Preset Editor Enhancer",
+    "loading_order": 100,
+    "requires": [],
+    "optional": [],
+    "js": "index.js",
+    "css": "style.css",
+    "author": "Community",
+    "version": "0.1",
+    "homePage": "https://github.com/youxianer/st-preset-enhancer",
+    "auto_update": true
+}
