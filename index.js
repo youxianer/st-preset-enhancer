@@ -591,6 +591,10 @@ function openVarManager() {
     if (!vars.size) {
         body.innerHTML = `<p style="opacity:.6;text-align:center;padding:20px;">未检测到 setvar/getvar<br>预设「${esc(getCurrentPresetName())}」${prompts.length} 条目</p>`;
     } else {
+        const tip = document.createElement('div');
+        tip.style.cssText = 'padding:8px 12px;margin-bottom:8px;background:rgba(255,255,255,0.05);border-radius:4px;font-size:12px;opacity:0.8;';
+        tip.innerHTML = '<i class="fa-solid fa-circle-info"></i> 提示：点击表格中的变量代码可快速复制到剪贴板';
+        body.appendChild(tip);
         const tbl = document.createElement('table'); tbl.className = 'pee-vtbl pee-vtbl-var';
         tbl.innerHTML = `<thead><tr><th>名称</th><th>类型</th><th>set 值 / 占位符 (点击复制)</th><th>getvar (点击复制)</th></tr></thead>`;
         const tb = document.createElement('tbody');
