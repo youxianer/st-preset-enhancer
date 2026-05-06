@@ -1,4 +1,4 @@
-// Preset Editor Enhancer v2.0
+// Preset Editor Enhancer v2.1
 const MODULE_NAME = 'preset_enhancer';
 const extensionFolderPath = `scripts/extensions/third-party/st-preset-enhancer`;
 const LOG = (...a) => console.log('[PEE]', ...a);
@@ -131,6 +131,7 @@ function ensureCustomQuickInputs() {
 }
 function buildToolbar(ta) {
     if (!S.enableToolbar || ta.parentElement?.querySelector('.pee-toolbar')) return null;
+    console.log('[PEE] 开始构建工具栏'); // 调试
     const bar = document.createElement('div'); bar.className = 'pee-toolbar';
     const lbl = document.createElement('span'); lbl.className = 'pee-toolbar-lbl'; lbl.textContent = 'MACROS'; bar.appendChild(lbl);
     const snap = { valid: false, value: '', ss: 0, se: 0 };
@@ -164,15 +165,23 @@ function buildToolbar(ta) {
     QUICK_MACROS.forEach(m => {
         if (m === null) { bar.appendChild(Object.assign(document.createElement('div'), { className: 'pee-toolbar-sep' })); return; }
         const btn = document.createElement('button'); btn.type = 'button'; btn.className = 'pee-toolbar-btn';
-        btn.textContent = m.text;
         const customIdx = Number.isInteger(m.customIndex) ? m.customIndex : -1;
         const updateCustomTitle = () => {
             if (customIdx < 0) {
+                btn.textContent = m.text;
                 btn.title = `${m.insert} — ${m.tip}`;
                 return;
             }
             const cached = ensureCustomQuickInputs()[customIdx] || '';
-            btn.title = cached ? `${cached} — ${m.tip}` : `点击设置自定义${customIdx + 1} — ${m.tip}`;
+            console.log(`[PEE] 自定义${customIdx + 1} 内容:`, cached); // 调试日志
+            if (cached) {
+                // 显示自定义内容，最多显示8个字符
+                btn.textContent = cached.length > 8 ? cached.substring(0, 8) + '…' : cached;
+                btn.title = `${cached} — ${m.tip}`;
+            } else {
+                btn.textContent = m.text;
+                btn.title = `点击设置自定义${customIdx + 1} — ${m.tip}`;
+            }
         };
         updateCustomTitle();
         let pressTimer = null;
@@ -455,6 +464,8 @@ function openVarDeps() {
     head.innerHTML = `<h3><i class="fa-solid fa-diagram-project"></i> 变量依赖 — ${esc(presetName)} (${varMap.size} 变量)</h3>`;
     const closeX = document.createElement('button'); closeX.className = 'pee-close'; closeX.innerHTML = '<i class="fa-solid fa-xmark"></i>';
     closeX.addEventListener('click', e => { e.stopPropagation(); cl(); });
+    head.appendChild(closeX);
+    panel.appendChild(head);
 
     const body = document.createElement('div'); body.className = 'pee-body';
 
