@@ -421,10 +421,19 @@ function extractVarsPerPrompt(prompts) {
         if (!p.content || p.marker) return;
         const writes = new Set(), reads = new Set();
         let m;
-        for (m of p.content.matchAll(/\{\{setvar::([^:}]+)::/gi)) writes.add(m[1].trim());
-        for (m of p.content.matchAll(/\{\{setglobalvar::([^:}]+)::/gi)) writes.add(m[1].trim());
-        for (m of p.content.matchAll(/\{\{addvar::([^:}]+)::/gi)) writes.add(m[1].trim());
-        for (m of p.content.matchAll(/\{\{addglobalvar::([^:}]+)::/gi)) writes.add(m[1].trim());
+        // 匹配 setvar/setglobalvar/addvar/addglobalvar，并检查值是否为空
+        for (m of p.content.matchAll(/\{\{setvar::([^:}]+)::([^}]*)\}\}/gi)) {
+            if (m[2].trim()) writes.add(m[1].trim()); // 只有值非空才计入
+        }
+        for (m of p.content.matchAll(/\{\{setglobalvar::([^:}]+)::([^}]*)\}\}/gi)) {
+            if (m[2].trim()) writes.add(m[1].trim());
+        }
+        for (m of p.content.matchAll(/\{\{addvar::([^:}]+)::([^}]*)\}\}/gi)) {
+            if (m[2].trim()) writes.add(m[1].trim());
+        }
+        for (m of p.content.matchAll(/\{\{addglobalvar::([^:}]+)::([^}]*)\}\}/gi)) {
+            if (m[2].trim()) writes.add(m[1].trim());
+        }
         for (m of p.content.matchAll(/\{\{(inc|dec)var::([^}]+)\}\}/gi)) writes.add(m[2].trim());
         for (m of p.content.matchAll(/\{\{(inc|dec)globalvar::([^}]+)\}\}/gi)) writes.add(m[2].trim());
         for (m of p.content.matchAll(/\{\{getvar::([^}]+)\}\}/gi)) reads.add(m[1].trim());
