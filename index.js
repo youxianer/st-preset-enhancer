@@ -173,11 +173,10 @@ function buildToolbar(ta) {
                 return;
             }
             const cached = ensureCustomQuickInputs()[customIdx] || '';
-            console.log(`[PEE] 自定义${customIdx + 1} 内容:`, cached); // 调试日志
             if (cached) {
-                // 显示自定义内容，最多显示8个字符
-                btn.textContent = cached.length > 8 ? cached.substring(0, 8) + '…' : cached;
-                btn.title = `${cached} — ${m.tip}`;
+                // 显示字段名（完整内容），最多显示10个字符
+                btn.textContent = cached.length > 10 ? cached.substring(0, 10) + '…' : cached;
+                btn.title = `插入: ${cached}`;
             } else {
                 btn.textContent = m.text;
                 btn.title = `点击设置自定义${customIdx + 1} — ${m.tip}`;
