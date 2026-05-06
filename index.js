@@ -438,20 +438,35 @@ function extractVarsPerPrompt(prompts) {
 
 function openVarDeps() {
     const presetName = getCurrentPresetName();
-    const prompts = getRealPrompts(getCurrentPrompts());
+    const allPrompts = getCurrentPrompts();
+    const prompts = getRealPrompts(allPrompts);
+
+    // 创建 identifier → prompt 的映射，用于查询 enabled 状态
+    const promptMap = new Map();
+    allPrompts.forEach(p => {
+        if (p.identifier) promptMap.set(p.identifier, p);
+    });
+
     const perPrompt = extractVarsPerPrompt(prompts);
 
     // 构建变量→写入条目、读取条目的映射
     const varMap = new Map(); // varName → {writers:[promptName,...], readers:[promptName,...]}
     perPrompt.forEach(p => {
-        p.writes.forEach(v => {
-            if (!varMap.has(v)) varMap.set(v, { writers: [], readers: [] });
-            varMap.get(v).writers.push(p.name);
-        });
-        p.reads.forEach(v => {
-            if (!varMap.has(v)) varMap.set(v, { writers: [], readers: [] });
-            varMap.get(v).readers.push(p.name);
-        });
+        // 检查该条目是否被禁用
+        const prompt = promptMap.get(p.identifier);
+        const isEnabled = !prompt || prompt.enabled !== false;
+
+        // 只统计启用的条目
+        if (isEnabled) {
+            p.writes.forEach(v => {
+                if (!varMap.has(v)) varMap.set(v, { writers: [], readers: [] });
+                varMap.get(v).writers.push(p.name);
+            });
+            p.reads.forEach(v => {
+                if (!varMap.has(v)) varMap.set(v, { writers: [], readers: [] });
+                varMap.get(v).readers.push(p.name);
+            });
+        }
     });
 
     const overlay = document.createElement('div'); overlay.className = 'pee-overlay openDrawer'; overlay.addEventListener('mousedown', e => e.stopPropagation()); overlay.addEventListener('click', e => e.stopPropagation()); document.body.appendChild(overlay);
