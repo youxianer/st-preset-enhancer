@@ -1058,6 +1058,8 @@ function openPromptOrder() {
     head.innerHTML = `<h3><i class="fa-solid fa-arrow-down-1-9"></i> 发送顺序预览 — ${esc(presetName)}</h3>`;
     const closeX = document.createElement('button'); closeX.className = 'pee-close'; closeX.innerHTML = '<i class="fa-solid fa-xmark"></i>';
     closeX.addEventListener('click', e => { e.stopPropagation(); cl(); });
+    head.appendChild(closeX);
+    panel.appendChild(head);
 
     const body = document.createElement('div'); body.className = 'pee-body';
 
