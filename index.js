@@ -151,6 +151,10 @@ function getActiveCodeMirrorContent() {
     if (active?.classList?.contains?.('cm-content')) return active;
     return active?.closest?.('.cm-content') || null;
 }
+function getCodeMirrorContentFromNode(node) {
+    const el = node?.nodeType === Node.TEXT_NODE ? node.parentElement : node;
+    return el?.classList?.contains?.('cm-content') ? el : el?.closest?.('.cm-content') || null;
+}
 function moveActiveSelection(cursorOff) {
     if (!Number.isInteger(cursorOff) || cursorOff === 0) return;
     const sel = window.getSelection?.();
@@ -158,8 +162,8 @@ function moveActiveSelection(cursorOff) {
     const dir = cursorOff < 0 ? 'backward' : 'forward';
     for (let i = 0; i < Math.abs(cursorOff); i++) sel.modify('move', dir, 'character');
 }
-function insertIntoActiveEditor(t, cursorOff) {
-    const active = getActiveCodeMirrorContent();
+function insertIntoActiveEditor(t, cursorOff, target) {
+    const active = target || getActiveCodeMirrorContent();
     if (!active || typeof document.execCommand !== 'function') return false;
     active.focus();
     const ok = document.execCommand('insertText', false, t);
@@ -203,7 +207,7 @@ function insertAt(ta, t, cursorOff, commit, savedRange, savedCmRange, savedDomRa
     }
     if (restoreSavedDomRange(savedDomRange)) {
         if (commit) commit(null);
-        if (insertIntoActiveEditor(t, cursorOff)) return;
+        if (insertIntoActiveEditor(t, cursorOff, savedDomRange.active)) return;
     }
     const hasSavedRange = validRangeFor(ta, savedRange);
     const p = hasSavedRange ? savedRange.ss : ta.selectionStart;
@@ -254,14 +258,20 @@ function buildToolbar(ta) {
         lastCm.valid = true;
     };
     const rememberDomSel = () => {
-        const active = getActiveCodeMirrorContent();
         const sel = window.getSelection?.();
-        if (!active || !sel || sel.rangeCount < 1) return;
+        if (!sel || sel.rangeCount < 1) return;
+        const range = sel.getRangeAt(0);
+        const active = getCodeMirrorContentFromNode(range.commonAncestorContainer) || getCodeMirrorContentFromNode(sel.anchorNode) || getActiveCodeMirrorContent();
+        if (!active) return;
         lastDom.active = active;
-        lastDom.range = sel.getRangeAt(0).cloneRange();
+        lastDom.range = range.cloneRange();
         lastDom.valid = true;
     };
     ['focus', 'click', 'keyup', 'mouseup', 'touchend', 'select', 'input'].forEach(ev => ta.addEventListener(ev, rememberSel));
+    document.addEventListener('selectionchange', rememberDomSel);
+    document.addEventListener('keyup', rememberDomSel, true);
+    document.addEventListener('pointerup', rememberDomSel, true);
+    document.addEventListener('touchend', () => setTimeout(rememberDomSel, 0), true);
     let resetTimer = null;
     let captured = false;
     ta.addEventListener('beforeinput', () => {
