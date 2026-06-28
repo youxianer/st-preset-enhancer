@@ -53,13 +53,40 @@ const QUICK_MACROS = [
     {text:'自定义3',insert:'',tip:'短按插入，长按清空',customIndex:2},
 ];
 
-const DEF = { enableAutocomplete: true, enableToolbar: true, enableCharCount: true, enableCustomMacros: true };
+const DEF = { enableAutocomplete: true, enableToolbar: true, enableCharCount: true, enableCustomMacros: true, enableMobileMacroClipboard: true };
 let S = { ...DEF }, $dd = null, ddIdx = -1, ddList = [];
 const done = new WeakSet();
 const esc = s => { const d = document.createElement('div'); d.textContent = s; return d.innerHTML; };
 function toast(m, t = 2000) { const e = document.createElement('div'); e.className = 'pee-toast'; e.textContent = m; document.body.appendChild(e); setTimeout(() => e.remove(), t); }
 function loadS() { const es = SillyTavern.getContext().extensionSettings; if (!es[MODULE_NAME]) es[MODULE_NAME] = { ...DEF }; S = es[MODULE_NAME]; for (const k of Object.keys(DEF)) if (!(k in S)) S[k] = DEF[k]; }
 function saveS() { SillyTavern.getContext().saveSettingsDebounced(); }
+function isMobileDevice() { return navigator.maxTouchPoints > 1 || /Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent); }
+async function copyText(text) {
+    try {
+        await navigator.clipboard.writeText(text);
+        return true;
+    } catch (e) {
+        try {
+            const ta = document.createElement('textarea');
+            ta.value = text;
+            ta.style.cssText = 'position:fixed;left:-9999px;top:0;opacity:0;';
+            document.body.appendChild(ta);
+            ta.focus();
+            ta.select();
+            const ok = document.execCommand('copy');
+            ta.remove();
+            return ok;
+        } catch (err) {
+            return false;
+        }
+    }
+}
+function mobileMacroClipboardEnabled() { return S.enableMobileMacroClipboard !== false && isMobileDevice(); }
+async function copyMacroForMobile(text) {
+    const ok = await copyText(text);
+    const extra = '可在本插件设置关闭。若关闭后仍想要直接插入指定位置，请关闭柏宝箱的「预设优化」栏目下「预设内容CodeMirror编辑器」开关。';
+    toast((ok ? '已复制快捷宏到剪贴板。' : '复制失败，请手动复制。') + extra, 6000);
+}
 
 // ═══ PRESET API ═══
 function getPM() { return SillyTavern.getContext().getPresetManager(); }
@@ -380,8 +407,10 @@ function buildToolbar(ta) {
                     updateCustomTitle();
                     toast(`已保存自定义${customIdx + 1}`);
                 }
+                if (mobileMacroClipboardEnabled()) { copyMacroForMobile(text); return; }
                 insertAt(ta, text, undefined, commitSnap, lastSel.valid ? lastSel : null, lastCm.valid ? lastCm : null, lastDom.valid ? lastDom : null); return;
             }
+            if (mobileMacroClipboardEnabled()) { copyMacroForMobile(m.insert); return; }
             insertAt(ta, m.insert, m.cursor, commitSnap, lastSel.valid ? lastSel : null, lastCm.valid ? lastCm : null, lastDom.valid ? lastDom : null);
         };
         btn.addEventListener('mousedown', keepCaretAndStart);
@@ -2063,6 +2092,7 @@ jQuery(async () => {
     jQuery('#pee_opt_autocomplete').prop('checked', S.enableAutocomplete).on('change', function () { S.enableAutocomplete = this.checked; saveS(); if (!this.checked) removeDD(); });
     jQuery('#pee_opt_toolbar').prop('checked', S.enableToolbar).on('change', function () { S.enableToolbar = this.checked; saveS(); document.querySelectorAll('.pee-toolbar').forEach(e => e.remove()); if (this.checked) scan(); });
     jQuery('#pee_opt_custommacros').prop('checked', S.enableCustomMacros !== false).on('change', function () { S.enableCustomMacros = this.checked; saveS(); applyCustomMacroVisibility(); });
+    jQuery('#pee_opt_mobile_clipboard').prop('checked', S.enableMobileMacroClipboard !== false).on('change', function () { S.enableMobileMacroClipboard = this.checked; saveS(); });
     jQuery('#pee_opt_charcount').prop('checked', S.enableCharCount).on('change', function () { S.enableCharCount = this.checked; saveS(); document.querySelectorAll('.pee-counter').forEach(e => e.remove()); if (this.checked) scan(); });
     jQuery('#pee_opt_snippets').prop('checked', S.enableSnippets !== false).on('change', function () { S.enableSnippets = this.checked; saveS(); document.querySelectorAll('.pee-snippet-btn').forEach(e => e.remove()); if (this.checked) scan(); });
     jQuery('#pee_btn_varmanager').on('click', openVarManager);
