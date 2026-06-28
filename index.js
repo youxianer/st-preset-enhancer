@@ -56,8 +56,15 @@ const QUICK_MACROS = [
 const DEF = { enableAutocomplete: true, enableToolbar: true, enableCharCount: true, enableCustomMacros: true, enableMobileMacroClipboard: true };
 let S = { ...DEF }, $dd = null, ddIdx = -1, ddList = [];
 const done = new WeakSet();
+let mobileMacroClipboardNoticeShown = false;
 const esc = s => { const d = document.createElement('div'); d.textContent = s; return d.innerHTML; };
-function toast(m, t = 2000) { const e = document.createElement('div'); e.className = 'pee-toast'; e.textContent = m; document.body.appendChild(e); setTimeout(() => e.remove(), t); }
+function fallbackToast(m, t = 2000) { const e = document.createElement('div'); e.className = 'pee-toast'; e.textContent = m; document.body.appendChild(e); setTimeout(() => e.remove(), t); }
+function stToast(type, m, title, opts) {
+    const fn = window.toastr?.[type] || window.toastr?.info;
+    if (fn) { fn.call(window.toastr, m, title, opts); return; }
+    fallbackToast(title ? `${title}：${m}` : m, opts?.timeOut || 4000);
+}
+function toast(m, t = 2000) { stToast('info', m, undefined, { timeOut: t, extendedTimeOut: Math.min(t, 2000) }); }
 function loadS() { const es = SillyTavern.getContext().extensionSettings; if (!es[MODULE_NAME]) es[MODULE_NAME] = { ...DEF }; S = es[MODULE_NAME]; for (const k of Object.keys(DEF)) if (!(k in S)) S[k] = DEF[k]; }
 function saveS() { SillyTavern.getContext().saveSettingsDebounced(); }
 function isMobileDevice() { return navigator.maxTouchPoints > 1 || /Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent); }
@@ -84,8 +91,18 @@ async function copyText(text) {
 function mobileMacroClipboardEnabled() { return S.enableMobileMacroClipboard !== false && isMobileDevice(); }
 async function copyMacroForMobile(text) {
     const ok = await copyText(text);
-    const extra = '可在本插件设置关闭。若关闭后仍想要直接插入指定位置，请关闭柏宝箱的「预设优化」栏目下「预设内容CodeMirror编辑器」开关。';
-    toast((ok ? '已复制快捷宏到剪贴板。' : '复制失败，请手动复制。') + extra, 6000);
+    if (!ok) {
+        stToast('error', '复制失败，请手动复制。', '快捷宏复制');
+        return;
+    }
+    if (mobileMacroClipboardNoticeShown) return;
+    mobileMacroClipboardNoticeShown = true;
+    stToast(
+        'info',
+        '已复制快捷宏到剪贴板。此功能可在本插件设置关闭。若关闭后仍想要直接插入指定位置，请关闭柏宝箱的「预设优化」栏目下「预设内容CodeMirror编辑器」开关。',
+        '手机端快捷宏复制',
+        { timeOut: 8000, extendedTimeOut: 4000 },
+    );
 }
 
 // ═══ PRESET API ═══
