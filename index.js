@@ -116,9 +116,20 @@ function onACInput(e) { if (!S.enableAutocomplete) { removeDD(); return; } const
 function onACKey(e) { if (!$dd) return; const n = ddList.length; if (e.key === 'ArrowDown') { e.preventDefault(); highlightDD((ddIdx + 1) % n); } else if (e.key === 'ArrowUp') { e.preventDefault(); highlightDD((ddIdx - 1 + n) % n); } else if (e.key === 'Enter' || e.key === 'Tab') { if (ddIdx >= 0 && ddIdx < n) { e.preventDefault(); commitAC(e.target, ddList[ddIdx].m); } } else if (e.key === 'Escape') { e.preventDefault(); removeDD(); } }
 
 // ═══ TOOLBAR + COUNTER ═══
-function insertAt(ta, t, cursorOff, commit) {
-    if (commit) commit();
-    const p = ta.selectionStart, e = ta.selectionEnd, v = ta.value;
+function validRangeFor(ta, range) {
+    return range
+        && Number.isInteger(range.ss)
+        && Number.isInteger(range.se)
+        && range.ss >= 0
+        && range.se >= range.ss
+        && range.se <= ta.value.length;
+}
+function insertAt(ta, t, cursorOff, commit, savedRange) {
+    const hasSavedRange = validRangeFor(ta, savedRange);
+    const p = hasSavedRange ? savedRange.ss : ta.selectionStart;
+    const e = hasSavedRange ? savedRange.se : ta.selectionEnd;
+    if (commit) commit(hasSavedRange ? savedRange : null);
+    const v = ta.value;
     ta.value = v.substring(0, p) + t + v.substring(e);
     const pos = typeof cursorOff === 'number' ? p + t.length + cursorOff : p + t.length;
     ta.selectionStart = ta.selectionEnd = pos;
@@ -135,6 +146,14 @@ function buildToolbar(ta) {
     const bar = document.createElement('div'); bar.className = 'pee-toolbar';
     const lbl = document.createElement('span'); lbl.className = 'pee-toolbar-lbl'; lbl.textContent = 'MACROS'; bar.appendChild(lbl);
     const snap = { valid: false, value: '', ss: 0, se: 0 };
+    const lastSel = { valid: false, ss: 0, se: 0 };
+    const rememberSel = () => {
+        if (!Number.isInteger(ta.selectionStart) || !Number.isInteger(ta.selectionEnd)) return;
+        lastSel.ss = ta.selectionStart;
+        lastSel.se = ta.selectionEnd;
+        lastSel.valid = true;
+    };
+    ['focus', 'click', 'keyup', 'mouseup', 'touchend', 'select', 'input'].forEach(ev => ta.addEventListener(ev, rememberSel));
     let resetTimer = null;
     let captured = false;
     ta.addEventListener('beforeinput', () => {
@@ -147,8 +166,11 @@ function buildToolbar(ta) {
         if (resetTimer !== null) window.clearTimeout(resetTimer);
         resetTimer = window.setTimeout(() => { resetTimer = null; captured = false; }, 1000);
     });
-    const commitSnap = () => {
-        snap.value = ta.value; snap.ss = ta.selectionStart; snap.se = ta.selectionEnd; snap.valid = true;
+    const commitSnap = (range) => {
+        snap.value = ta.value;
+        snap.ss = validRangeFor(ta, range) ? range.ss : ta.selectionStart;
+        snap.se = validRangeFor(ta, range) ? range.se : ta.selectionEnd;
+        snap.valid = true;
         captured = true;
         if (resetTimer !== null) { window.clearTimeout(resetTimer); resetTimer = null; }
         undoBtn.disabled = false;
@@ -207,8 +229,17 @@ function buildToolbar(ta) {
                 pressTimer = null;
             }
         };
-        btn.addEventListener('mousedown', startLongPress);
-        btn.addEventListener('touchstart', startLongPress, { passive: true });
+        const keepCaretAndStart = (ev) => {
+            if (ev.cancelable) ev.preventDefault();
+            rememberSel();
+            startLongPress();
+        };
+        const rememberTouchAndStart = () => {
+            rememberSel();
+            startLongPress();
+        };
+        btn.addEventListener('mousedown', keepCaretAndStart);
+        btn.addEventListener('touchstart', rememberTouchAndStart, { passive: true });
         btn.addEventListener('mouseup', cancelLongPress);
         btn.addEventListener('mouseleave', cancelLongPress);
         btn.addEventListener('touchend', cancelLongPress);
@@ -231,9 +262,9 @@ function buildToolbar(ta) {
                     updateCustomTitle();
                     toast(`已保存自定义${customIdx + 1}`);
                 }
-                insertAt(ta, text, undefined, commitSnap); return;
+                insertAt(ta, text, undefined, commitSnap, lastSel.valid ? lastSel : null); return;
             }
-            insertAt(ta, m.insert, m.cursor, commitSnap);
+            insertAt(ta, m.insert, m.cursor, commitSnap, lastSel.valid ? lastSel : null);
         });
         bar.appendChild(btn);
     });
