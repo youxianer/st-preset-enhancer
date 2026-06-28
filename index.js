@@ -53,7 +53,7 @@ const QUICK_MACROS = [
     {text:'自定义3',insert:'',tip:'短按插入，长按清空',customIndex:2},
 ];
 
-const DEF = { enableAutocomplete: true, enableToolbar: true, enableCharCount: true };
+const DEF = { enableAutocomplete: true, enableToolbar: true, enableCharCount: true, enableCustomMacros: true };
 let S = { ...DEF }, $dd = null, ddIdx = -1, ddList = [];
 const done = new WeakSet();
 const esc = s => { const d = document.createElement('div'); d.textContent = s; return d.innerHTML; };
@@ -124,7 +124,49 @@ function validRangeFor(ta, range) {
         && range.se >= range.ss
         && range.se <= ta.value.length;
 }
-function insertAt(ta, t, cursorOff, commit, savedRange) {
+function validCodeMirrorRange(saved) {
+    if (!saved?.valid || !saved.view?.state?.doc || typeof saved.view.dispatch !== 'function') return false;
+    const len = saved.view.state.doc.toString().length;
+    return Number.isInteger(saved.from)
+        && Number.isInteger(saved.to)
+        && saved.from >= 0
+        && saved.to >= saved.from
+        && saved.to <= len;
+}
+function findCodeMirrorView(el) {
+    for (let cur = el; cur; cur = cur.parentElement) {
+        const cmView = cur.cmView;
+        const view = cmView?.view || cmView?.rootView?.view;
+        if (view?.state?.doc && typeof view.dispatch === 'function') return view;
+    }
+    return null;
+}
+function getActiveCodeMirrorView() {
+    const active = document.activeElement;
+    if (!active?.classList?.contains?.('cm-content') && !active?.closest?.('.cm-editor')) return null;
+    return findCodeMirrorView(active);
+}
+function insertAt(ta, t, cursorOff, commit, savedRange, savedCmRange) {
+    const activeCm = getActiveCodeMirrorView();
+    const useSavedCm = !activeCm && validCodeMirrorRange(savedCmRange);
+    const cm = activeCm || (useSavedCm ? savedCmRange.view : null);
+    if (cm) {
+        const sel = activeCm ? cm.state.selection.main : savedCmRange;
+        const from = sel.from;
+        const to = sel.to;
+        if (commit) commit(null);
+        const pos = typeof cursorOff === 'number' ? from + t.length + cursorOff : from + t.length;
+        cm.dispatch({
+            changes: { from, to, insert: t },
+            selection: { anchor: pos },
+            scrollIntoView: true,
+        });
+        ta.value = cm.state.doc.toString();
+        ta.selectionStart = ta.selectionEnd = pos;
+        ta.dispatchEvent(new Event('input', { bubbles: true }));
+        cm.focus();
+        return;
+    }
     const hasSavedRange = validRangeFor(ta, savedRange);
     const p = hasSavedRange ? savedRange.ss : ta.selectionStart;
     const e = hasSavedRange ? savedRange.se : ta.selectionEnd;
@@ -140,6 +182,10 @@ function ensureCustomQuickInputs() {
     while (S.customQuickInputs.length < 3) S.customQuickInputs.push('');
     return S.customQuickInputs;
 }
+function quickMacroVisible(m, settings = S) {
+    if (!m) return true;
+    return settings.enableCustomMacros !== false || !Number.isInteger(m.customIndex);
+}
 function buildToolbar(ta) {
     if (!S.enableToolbar || ta.parentElement?.querySelector('.pee-toolbar')) return null;
     console.log('[PEE] 开始构建工具栏'); // 调试
@@ -147,11 +193,21 @@ function buildToolbar(ta) {
     const lbl = document.createElement('span'); lbl.className = 'pee-toolbar-lbl'; lbl.textContent = 'MACROS'; bar.appendChild(lbl);
     const snap = { valid: false, value: '', ss: 0, se: 0 };
     const lastSel = { valid: false, ss: 0, se: 0 };
+    const lastCm = { valid: false, view: null, from: 0, to: 0 };
     const rememberSel = () => {
         if (!Number.isInteger(ta.selectionStart) || !Number.isInteger(ta.selectionEnd)) return;
         lastSel.ss = ta.selectionStart;
         lastSel.se = ta.selectionEnd;
         lastSel.valid = true;
+    };
+    const rememberCmSel = () => {
+        const cm = getActiveCodeMirrorView();
+        if (!cm) return;
+        const sel = cm.state.selection.main;
+        lastCm.view = cm;
+        lastCm.from = sel.from;
+        lastCm.to = sel.to;
+        lastCm.valid = true;
     };
     ['focus', 'click', 'keyup', 'mouseup', 'touchend', 'select', 'input'].forEach(ev => ta.addEventListener(ev, rememberSel));
     let resetTimer = null;
@@ -184,7 +240,7 @@ function buildToolbar(ta) {
         snap.valid = false; captured = false; undoBtn.disabled = true;
     });
     bar.appendChild(undoBtn);
-    QUICK_MACROS.forEach(m => {
+    QUICK_MACROS.filter(m => quickMacroVisible(m)).forEach(m => {
         if (m === null) { bar.appendChild(Object.assign(document.createElement('div'), { className: 'pee-toolbar-sep' })); return; }
         const btn = document.createElement('button'); btn.type = 'button'; btn.className = 'pee-toolbar-btn';
         const customIdx = Number.isInteger(m.customIndex) ? m.customIndex : -1;
@@ -232,10 +288,12 @@ function buildToolbar(ta) {
         const keepCaretAndStart = (ev) => {
             if (ev.cancelable) ev.preventDefault();
             rememberSel();
+            rememberCmSel();
             startLongPress();
         };
         const rememberTouchAndStart = () => {
             rememberSel();
+            rememberCmSel();
             startLongPress();
         };
         btn.addEventListener('mousedown', keepCaretAndStart);
@@ -262,9 +320,9 @@ function buildToolbar(ta) {
                     updateCustomTitle();
                     toast(`已保存自定义${customIdx + 1}`);
                 }
-                insertAt(ta, text, undefined, commitSnap, lastSel.valid ? lastSel : null); return;
+                insertAt(ta, text, undefined, commitSnap, lastSel.valid ? lastSel : null, lastCm.valid ? lastCm : null); return;
             }
-            insertAt(ta, m.insert, m.cursor, commitSnap, lastSel.valid ? lastSel : null);
+            insertAt(ta, m.insert, m.cursor, commitSnap, lastSel.valid ? lastSel : null, lastCm.valid ? lastCm : null);
         });
         bar.appendChild(btn);
     });
@@ -1929,6 +1987,7 @@ jQuery(async () => {
     jQuery('#extensions_settings2').append(html);
     jQuery('#pee_opt_autocomplete').prop('checked', S.enableAutocomplete).on('change', function () { S.enableAutocomplete = this.checked; saveS(); if (!this.checked) removeDD(); });
     jQuery('#pee_opt_toolbar').prop('checked', S.enableToolbar).on('change', function () { S.enableToolbar = this.checked; saveS(); document.querySelectorAll('.pee-toolbar').forEach(e => e.remove()); if (this.checked) scan(); });
+    jQuery('#pee_opt_custommacros').prop('checked', S.enableCustomMacros !== false).on('change', function () { S.enableCustomMacros = this.checked; saveS(); document.querySelectorAll('.pee-toolbar').forEach(e => e.remove()); if (S.enableToolbar) scan(); });
     jQuery('#pee_opt_charcount').prop('checked', S.enableCharCount).on('change', function () { S.enableCharCount = this.checked; saveS(); document.querySelectorAll('.pee-counter').forEach(e => e.remove()); if (this.checked) scan(); });
     jQuery('#pee_opt_snippets').prop('checked', S.enableSnippets !== false).on('change', function () { S.enableSnippets = this.checked; saveS(); document.querySelectorAll('.pee-snippet-btn').forEach(e => e.remove()); if (this.checked) scan(); });
     jQuery('#pee_btn_varmanager').on('click', openVarManager);

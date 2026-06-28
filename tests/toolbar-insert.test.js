@@ -5,11 +5,14 @@ const assert = require('assert');
 
 const indexPath = path.join(__dirname, '..', 'index.js');
 const source = fs.readFileSync(indexPath, 'utf8');
-const match = source.match(/function validRangeFor\([^)]*\) \{[\s\S]*?\n\}\s*function insertAt\([^)]*\) \{[\s\S]*?\n\}/);
+const match = source.match(/function validRangeFor\([^)]*\) \{[\s\S]*?\n\}\s*function validCodeMirrorRange\([^)]*\) \{[\s\S]*?\n\}\s*function findCodeMirrorView\([^)]*\) \{[\s\S]*?\n\}\s*function getActiveCodeMirrorView\([^)]*\) \{[\s\S]*?\n\}\s*function insertAt\([^)]*\) \{[\s\S]*?\n\}/);
 
 assert(match, '没有找到 insertAt 函数');
 
-const context = { Event: class Event { constructor(type, init) { this.type = type; this.bubbles = !!init?.bubbles; } } };
+const context = {
+    document: { activeElement: null },
+    Event: class Event { constructor(type, init) { this.type = type; this.bubbles = !!init?.bubbles; } },
+};
 vm.createContext(context);
 vm.runInContext(`${match[0]}; this.insertAt = insertAt;`, context);
 
@@ -39,6 +42,65 @@ function makeTextarea(value, selectionStart, selectionEnd = selectionStart) {
     assert.strictEqual(ta.value, 'abcdef', '有选区时应替换之前记录的选区');
     assert.strictEqual(ta.selectionStart, 4);
     assert.strictEqual(ta.selectionEnd, 4);
+}
+
+{
+    const cmContent = {
+        classList: { contains(name) { return name === 'cm-content'; } },
+        parentElement: null,
+    };
+    const view = {
+        state: {
+            doc: { toString: () => 'abef' },
+            selection: { main: { from: 2, to: 2 } },
+        },
+        focused: false,
+        dispatched: null,
+        dispatch(spec) {
+            this.dispatched = spec;
+            this.state.doc = { toString: () => 'abcdef' };
+            this.state.selection = { main: { from: 4, to: 4 } };
+        },
+        focus() { this.focused = true; },
+    };
+    cmContent.cmView = { rootView: { view } };
+    context.document.activeElement = cmContent;
+
+    const ta = makeTextarea('abef', 4);
+    context.insertAt(ta, 'cd');
+
+    assert.strictEqual(view.dispatched.changes.from, 2, 'CodeMirror 获得焦点时应使用 CodeMirror 的真实光标');
+    assert.strictEqual(view.dispatched.changes.to, 2);
+    assert.strictEqual(view.dispatched.changes.insert, 'cd');
+    assert.strictEqual(view.dispatched.selection.anchor, 4);
+    assert.strictEqual(ta.value, 'abcdef');
+    assert.strictEqual(ta.selectionStart, 4);
+    assert.strictEqual(ta.selectionEnd, 4);
+    assert.strictEqual(view.focused, true);
+}
+
+{
+    context.document.activeElement = { classList: { contains() { return false; } }, closest() { return null; } };
+    const view = {
+        state: {
+            doc: { toString: () => 'abef' },
+            selection: { main: { from: 4, to: 4 } },
+        },
+        dispatched: null,
+        dispatch(spec) {
+            this.dispatched = spec;
+            this.state.doc = { toString: () => 'abcdef' };
+        },
+        focus() {},
+    };
+
+    const ta = makeTextarea('abef', 4);
+    context.insertAt(ta, 'cd', undefined, null, null, { valid: true, view, from: 2, to: 2 });
+
+    assert.strictEqual(view.dispatched.changes.from, 2, '按钮获得焦点时应使用已记录的 CodeMirror 光标');
+    assert.strictEqual(view.dispatched.changes.to, 2);
+    assert.strictEqual(ta.value, 'abcdef');
+    assert.strictEqual(ta.selectionStart, 4);
 }
 
 console.log('toolbar insert tests passed');
