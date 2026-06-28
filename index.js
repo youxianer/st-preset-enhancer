@@ -146,6 +146,27 @@ function getActiveCodeMirrorView() {
     if (!active?.classList?.contains?.('cm-content') && !active?.closest?.('.cm-editor')) return null;
     return findCodeMirrorView(active);
 }
+function getActiveCodeMirrorContent() {
+    const active = document.activeElement;
+    if (active?.classList?.contains?.('cm-content')) return active;
+    return active?.closest?.('.cm-content') || null;
+}
+function moveActiveSelection(cursorOff) {
+    if (!Number.isInteger(cursorOff) || cursorOff === 0) return;
+    const sel = window.getSelection?.();
+    if (!sel?.modify) return;
+    const dir = cursorOff < 0 ? 'backward' : 'forward';
+    for (let i = 0; i < Math.abs(cursorOff); i++) sel.modify('move', dir, 'character');
+}
+function insertIntoActiveEditor(t, cursorOff) {
+    const active = getActiveCodeMirrorContent();
+    if (!active || typeof document.execCommand !== 'function') return false;
+    active.focus();
+    const ok = document.execCommand('insertText', false, t);
+    if (!ok) return false;
+    moveActiveSelection(cursorOff);
+    return true;
+}
 function insertAt(ta, t, cursorOff, commit, savedRange, savedCmRange) {
     const activeCm = getActiveCodeMirrorView();
     const useSavedCm = !activeCm && validCodeMirrorRange(savedCmRange);
@@ -166,6 +187,10 @@ function insertAt(ta, t, cursorOff, commit, savedRange, savedCmRange) {
         ta.dispatchEvent(new Event('input', { bubbles: true }));
         cm.focus();
         return;
+    }
+    if (getActiveCodeMirrorContent()) {
+        if (commit) commit(null);
+        if (insertIntoActiveEditor(t, cursorOff)) return;
     }
     const hasSavedRange = validRangeFor(ta, savedRange);
     const p = hasSavedRange ? savedRange.ss : ta.selectionStart;
