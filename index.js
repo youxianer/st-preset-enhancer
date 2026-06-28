@@ -167,7 +167,16 @@ function insertIntoActiveEditor(t, cursorOff) {
     moveActiveSelection(cursorOff);
     return true;
 }
-function insertAt(ta, t, cursorOff, commit, savedRange, savedCmRange) {
+function restoreSavedDomRange(savedDomRange) {
+    if (!savedDomRange?.valid || !savedDomRange.range) return false;
+    const sel = window.getSelection?.();
+    if (!sel) return false;
+    sel.removeAllRanges();
+    sel.addRange(savedDomRange.range);
+    savedDomRange.active?.focus?.();
+    return true;
+}
+function insertAt(ta, t, cursorOff, commit, savedRange, savedCmRange, savedDomRange) {
     const activeCm = getActiveCodeMirrorView();
     const useSavedCm = !activeCm && validCodeMirrorRange(savedCmRange);
     const cm = activeCm || (useSavedCm ? savedCmRange.view : null);
@@ -192,6 +201,10 @@ function insertAt(ta, t, cursorOff, commit, savedRange, savedCmRange) {
         if (commit) commit(null);
         if (insertIntoActiveEditor(t, cursorOff)) return;
     }
+    if (restoreSavedDomRange(savedDomRange)) {
+        if (commit) commit(null);
+        if (insertIntoActiveEditor(t, cursorOff)) return;
+    }
     const hasSavedRange = validRangeFor(ta, savedRange);
     const p = hasSavedRange ? savedRange.ss : ta.selectionStart;
     const e = hasSavedRange ? savedRange.se : ta.selectionEnd;
@@ -211,6 +224,11 @@ function quickMacroVisible(m, settings = S) {
     if (!m) return true;
     return settings.enableCustomMacros !== false || !Number.isInteger(m.customIndex);
 }
+function applyCustomMacroVisibility(root = document) {
+    root.querySelectorAll?.('.pee-custom-macro-btn').forEach(btn => {
+        btn.style.display = S.enableCustomMacros === false ? 'none' : '';
+    });
+}
 function buildToolbar(ta) {
     if (!S.enableToolbar || ta.parentElement?.querySelector('.pee-toolbar')) return null;
     console.log('[PEE] 开始构建工具栏'); // 调试
@@ -219,6 +237,7 @@ function buildToolbar(ta) {
     const snap = { valid: false, value: '', ss: 0, se: 0 };
     const lastSel = { valid: false, ss: 0, se: 0 };
     const lastCm = { valid: false, view: null, from: 0, to: 0 };
+    const lastDom = { valid: false, active: null, range: null };
     const rememberSel = () => {
         if (!Number.isInteger(ta.selectionStart) || !Number.isInteger(ta.selectionEnd)) return;
         lastSel.ss = ta.selectionStart;
@@ -233,6 +252,14 @@ function buildToolbar(ta) {
         lastCm.from = sel.from;
         lastCm.to = sel.to;
         lastCm.valid = true;
+    };
+    const rememberDomSel = () => {
+        const active = getActiveCodeMirrorContent();
+        const sel = window.getSelection?.();
+        if (!active || !sel || sel.rangeCount < 1) return;
+        lastDom.active = active;
+        lastDom.range = sel.getRangeAt(0).cloneRange();
+        lastDom.valid = true;
     };
     ['focus', 'click', 'keyup', 'mouseup', 'touchend', 'select', 'input'].forEach(ev => ta.addEventListener(ev, rememberSel));
     let resetTimer = null;
@@ -265,10 +292,11 @@ function buildToolbar(ta) {
         snap.valid = false; captured = false; undoBtn.disabled = true;
     });
     bar.appendChild(undoBtn);
-    QUICK_MACROS.filter(m => quickMacroVisible(m)).forEach(m => {
+    QUICK_MACROS.forEach(m => {
         if (m === null) { bar.appendChild(Object.assign(document.createElement('div'), { className: 'pee-toolbar-sep' })); return; }
         const btn = document.createElement('button'); btn.type = 'button'; btn.className = 'pee-toolbar-btn';
         const customIdx = Number.isInteger(m.customIndex) ? m.customIndex : -1;
+        if (customIdx >= 0) btn.classList.add('pee-custom-macro-btn');
         const updateCustomTitle = () => {
             if (customIdx < 0) {
                 btn.textContent = m.text;
@@ -288,6 +316,7 @@ function buildToolbar(ta) {
         updateCustomTitle();
         let pressTimer = null;
         let didLongPress = false;
+        let touchInserted = false;
         const startLongPress = () => {
             if (customIdx < 0) return;
             didLongPress = false;
@@ -314,21 +343,17 @@ function buildToolbar(ta) {
             if (ev.cancelable) ev.preventDefault();
             rememberSel();
             rememberCmSel();
+            rememberDomSel();
             startLongPress();
         };
-        const rememberTouchAndStart = () => {
+        const rememberTouchAndStart = (ev) => {
+            if (ev.cancelable) ev.preventDefault();
             rememberSel();
             rememberCmSel();
+            rememberDomSel();
             startLongPress();
         };
-        btn.addEventListener('mousedown', keepCaretAndStart);
-        btn.addEventListener('touchstart', rememberTouchAndStart, { passive: true });
-        btn.addEventListener('mouseup', cancelLongPress);
-        btn.addEventListener('mouseleave', cancelLongPress);
-        btn.addEventListener('touchend', cancelLongPress);
-        btn.addEventListener('touchcancel', cancelLongPress);
-        btn.addEventListener('click', ev => {
-            ev.preventDefault();
+        const runMacro = () => {
             if (didLongPress) {
                 didLongPress = false;
                 return;
@@ -345,12 +370,27 @@ function buildToolbar(ta) {
                     updateCustomTitle();
                     toast(`已保存自定义${customIdx + 1}`);
                 }
-                insertAt(ta, text, undefined, commitSnap, lastSel.valid ? lastSel : null, lastCm.valid ? lastCm : null); return;
+                insertAt(ta, text, undefined, commitSnap, lastSel.valid ? lastSel : null, lastCm.valid ? lastCm : null, lastDom.valid ? lastDom : null); return;
             }
-            insertAt(ta, m.insert, m.cursor, commitSnap, lastSel.valid ? lastSel : null, lastCm.valid ? lastCm : null);
+            insertAt(ta, m.insert, m.cursor, commitSnap, lastSel.valid ? lastSel : null, lastCm.valid ? lastCm : null, lastDom.valid ? lastDom : null);
+        };
+        btn.addEventListener('mousedown', keepCaretAndStart);
+        btn.addEventListener('touchstart', rememberTouchAndStart, { passive: false });
+        btn.addEventListener('mouseup', cancelLongPress);
+        btn.addEventListener('mouseleave', cancelLongPress);
+        btn.addEventListener('touchend', ev => { if (ev.cancelable) ev.preventDefault(); cancelLongPress(); touchInserted = true; runMacro(); });
+        btn.addEventListener('touchcancel', cancelLongPress);
+        btn.addEventListener('click', ev => {
+            ev.preventDefault();
+            if (touchInserted) {
+                touchInserted = false;
+                return;
+            }
+            runMacro();
         });
         bar.appendChild(btn);
     });
+    applyCustomMacroVisibility(bar);
     return bar;
 }
 function buildCounter(ta) {
@@ -2012,7 +2052,7 @@ jQuery(async () => {
     jQuery('#extensions_settings2').append(html);
     jQuery('#pee_opt_autocomplete').prop('checked', S.enableAutocomplete).on('change', function () { S.enableAutocomplete = this.checked; saveS(); if (!this.checked) removeDD(); });
     jQuery('#pee_opt_toolbar').prop('checked', S.enableToolbar).on('change', function () { S.enableToolbar = this.checked; saveS(); document.querySelectorAll('.pee-toolbar').forEach(e => e.remove()); if (this.checked) scan(); });
-    jQuery('#pee_opt_custommacros').prop('checked', S.enableCustomMacros !== false).on('change', function () { S.enableCustomMacros = this.checked; saveS(); document.querySelectorAll('.pee-toolbar').forEach(e => e.remove()); if (S.enableToolbar) scan(); });
+    jQuery('#pee_opt_custommacros').prop('checked', S.enableCustomMacros !== false).on('change', function () { S.enableCustomMacros = this.checked; saveS(); applyCustomMacroVisibility(); });
     jQuery('#pee_opt_charcount').prop('checked', S.enableCharCount).on('change', function () { S.enableCharCount = this.checked; saveS(); document.querySelectorAll('.pee-counter').forEach(e => e.remove()); if (this.checked) scan(); });
     jQuery('#pee_opt_snippets').prop('checked', S.enableSnippets !== false).on('change', function () { S.enableSnippets = this.checked; saveS(); document.querySelectorAll('.pee-snippet-btn').forEach(e => e.remove()); if (this.checked) scan(); });
     jQuery('#pee_btn_varmanager').on('click', openVarManager);
